@@ -1,4 +1,5 @@
 import { activeAttemptFor } from "./mock-attempt-store";
+import { savedResults } from "./mock-result-service";
 import type { ApprovedResult, BoothSection, EligibilityService, EventDay } from "./eligibility-service";
 export type DemoHistory = "new" | "previous" | "played-today" | "repeated" | "active" | "complete";
 export type EligibilityDemoConfig = { day: EventDay; section: BoothSection; history: DemoHistory; offline: boolean };
@@ -28,7 +29,8 @@ export const mockEligibilityService: EligibilityService = {
     const config = { ...configuration };
     await new Promise(resolve => setTimeout(resolve, 650));
     if (config.offline) throw new Error("Mock eligibility unavailable");
-    const results = history(config);
+    const actual = [...savedResults.values()].filter(result => result.participantIdentifier === participantIdentifier);
+    const results = [...history(config).filter(result => !actual.some(saved => saved.gameId === result.gameId || saved.day === result.day)), ...actual];
     const playedToday = results.some(result => result.day === config.day);
     const active = config.history === "active" || Boolean(activeAttemptFor(participantIdentifier));
     const availableIds = schedule(config.day, config.section);

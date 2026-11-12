@@ -3,9 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { Gamepad2, HelpCircle, LoaderCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { GameAttempt } from "@/services/attempt-service";
+import { resultDemo } from "@/services";
+import { ResultScreen } from "./result-screen";
 import { getGameAsset } from "./game-assets";
 
-export function GameContainer({ attempt, onReturn }: { attempt: GameAttempt; onReturn: () => void }) {
+export function GameContainer({ attempt, onReturn, onComplete }: { attempt: GameAttempt; onReturn: () => void; onComplete: () => void }) {
+  const [finished, setFinished] = useState(false);
   const frame = useRef<HTMLIFrameElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const [revision, setRevision] = useState(0);
@@ -14,6 +17,7 @@ export function GameContainer({ attempt, onReturn }: { attempt: GameAttempt; onR
   const [help, setHelp] = useState(false);
   useEffect(() => { heading.current?.focus(); }, []);
   useEffect(() => {
+    if (finished) return;
     const abort = new AbortController();
     let cancelled = false;
     const nonce = crypto.randomUUID();
@@ -38,7 +42,8 @@ export function GameContainer({ attempt, onReturn }: { attempt: GameAttempt; onR
       } catch { if (!cancelled) { clearTimeout(timer); setState("error"); setSource(null); } }
     })();
     return () => { cancelled = true; abort.abort(); clearTimeout(timer); window.removeEventListener("message", receive); };
-  }, [attempt.id, attempt.gameId, revision]);
+  }, [attempt.id, attempt.gameId, revision, finished]);
+  if (finished) return <ResultScreen request={{ attemptId: attempt.id, score: 80 }} onComplete={onComplete} />;
   return <main className="game-mode">
     <header className="game-mode-header"><div><Gamepad2 /><span><small>وضع اللعب · عرض تجريبي</small><h1 ref={heading} tabIndex={-1}>{attempt.gameTitle}</h1></span></div><Button variant="outline" onClick={() => setHelp(value => !value)} aria-expanded={help}><HelpCircle />طلب مساعدة</Button></header>
     {help && <section className="game-help" role="region" aria-label="مساعدة عضو النادي"><h2>أعد الجهاز إلى عضو النادي</h2><p>العودة للبوث لا تنهي المحاولة ولا تسجّل نتيجة. يمكن لعضو النادي استئناف نفس المحاولة.</p><Button onClick={onReturn}>العودة إلى شاشة الموظف</Button></section>}
@@ -46,6 +51,6 @@ export function GameContainer({ attempt, onReturn }: { attempt: GameAttempt; onR
       {state === "loading" && <p className="game-loading" role="status"><LoaderCircle className="animate-spin" />جارٍ تجهيز مساحة اللعب…</p>}
       {state === "error" && <div className="game-load-error" role="alert"><h2>تعذّر تحميل صفحة اللعبة</h2><p>المحاولة الحالية محفوظة في الذاكرة التجريبية. أعد تحميل الصفحة داخل الحاوية دون طلب بدء جديد.</p><Button onClick={() => setRevision(value => value + 1)}><RefreshCw />إعادة تحميل الحاوية</Button></div>}
       {source && <iframe ref={frame} title="حاوية اللعبة" src={source} sandbox="allow-scripts" referrerPolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'" className={state === "ready" ? "game-frame" : "game-frame game-frame-pending"} />}
-    </div><footer className="game-mode-footer"><span role="status">{state === "ready" ? "الحاوية جاهزة" : state === "error" ? "بانتظار استعادة التحميل" : "جارٍ التحميل"}</span><span>صفحة اختبار للحاوية فقط · لا توجد نقاط أو نتائج محفوظة</span></footer>
+    </div><section className="result-demo"><details><summary>اختبار انتهاء المحاولة وحفظ النتيجة</summary><p>أداة عرض مؤقتة لعضو النادي؛ ليست نتيجة من لعبة حقيقية.</p><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label><Button disabled={state !== "ready"} onClick={() => setFinished(true)}>إنهاء تجريبي بنتيجة 80</Button></details></section><footer className="game-mode-footer"><span role="status">{state === "ready" ? "الحاوية جاهزة" : state === "error" ? "بانتظار استعادة التحميل" : "جارٍ التحميل"}</span><span>صفحة اختبار للحاوية فقط · لا توجد نقاط أو نتائج محفوظة</span></footer>
   </main>;
 }

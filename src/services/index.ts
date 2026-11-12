@@ -5,3 +5,6 @@ export { mockParticipantService as participantService, participantDemo } from ".
 export { mockEligibilityService as eligibilityService, eligibilityDemo } from "./mock-eligibility-service";
 
 export { mockAttemptService as attemptService, attemptDemo } from "./mock-attempt-service";
+export { mockResultService as resultService, resultDemo } from "./mock-result-service";
+
+export { mockLeaderboardService as leaderboardService, leaderboardDemo } from "./mock-leaderboard-service";

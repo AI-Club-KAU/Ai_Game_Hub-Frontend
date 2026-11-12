@@ -4,15 +4,17 @@ import { ArrowLeft, CheckCircle2, Gamepad2, LoaderCircle, LockKeyhole, Search, U
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EligibilityPanel } from "@/features/eligibility/eligibility-panel";
-import { participantService, participantDemo, eligibilityDemo } from "@/services";
+import { participantService, participantDemo, eligibilityDemo, resultDemo, leaderboardDemo } from "@/services";
 import { normalizeIdentifier, validIdentifier, type Participant } from "@/services/participant-service";
 
+import { LeaderboardScreen } from "@/features/leaderboard/leaderboard-screen";
 import { GameContainer } from "@/features/games/game-container";
 import type { GameAttempt } from "@/services/attempt-service";
 
 type Mode = "new" | "existing";
 type ErrorState = { message: string; field?: "name" | "identifier" };
 export function ParticipantScreen({ onLock }: { onLock: () => void }) {
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [playing, setPlaying] = useState<GameAttempt | null>(null);
   const [mode, setMode] = useState<Mode>("new");
   const [fullName, setFullName] = useState("");
@@ -28,7 +30,7 @@ export function ParticipantScreen({ onLock }: { onLock: () => void }) {
   useEffect(() => { titleRef.current?.focus(); }, [participant]);
   useEffect(() => { if (error?.field === "name") nameRef.current?.focus(); else if (error) idRef.current?.focus(); }, [error]);
   function clear(nextMode: Mode = "new") {
-    eligibilityDemo.reset();
+    eligibilityDemo.reset(); resultDemo.reset();
     setMode(nextMode); setFullName(""); setIdentifier(""); setParticipant(null); setError(null);
     setOffline(false); participantDemo?.setOffline(false);
   }
@@ -47,9 +49,10 @@ export function ParticipantScreen({ onLock }: { onLock: () => void }) {
       setError({ message: "تعذّر الاتصال بالخدمة. لم نتأكد من إتمام العملية؛ حاول مرة أخرى." });
     } finally { inFlight.current = false; setBusy(false); }
   }
-  if (playing) return <GameContainer attempt={playing} onReturn={() => setPlaying(null)} />;
+  if (showLeaderboard) return <LeaderboardScreen onReturn={() => { leaderboardDemo.reset(); setShowLeaderboard(false); }} />;
+  if (playing) return <GameContainer attempt={playing} onReturn={() => setPlaying(null)} onComplete={() => { setPlaying(null); setBusy(false); clear(); }} />;
   return <main className="access-shell booth-shell">
-    <header className="site-header"><div className="brand"><span className="brand-symbol"><Gamepad2 /></span><span><b dir="ltr">AI CLUB<span className="brand-dot">.</span></b><small>نادي الذكاء الاصطناعي</small></span></div><Button variant="outline" size="sm" disabled={busy} onClick={() => { participantDemo?.setOffline(false); eligibilityDemo.reset(); onLock(); }}><LockKeyhole />قفل البوث</Button></header>
+    <header className="site-header"><div className="brand"><span className="brand-symbol"><Gamepad2 /></span><span><b dir="ltr">AI CLUB<span className="brand-dot">.</span></b><small>نادي الذكاء الاصطناعي</small></span></div><nav className="booth-navigation" aria-label="تنقل البوث">{!participant && <Button variant="outline" size="sm" disabled={busy} onClick={() => { clear(); leaderboardDemo.reset(); setShowLeaderboard(true); }}>لوحة المتصدرين</Button>}<Button variant="outline" size="sm" disabled={busy} onClick={() => { participantDemo?.setOffline(false); eligibilityDemo.reset(); onLock(); }}><LockKeyhole />قفل البوث</Button></nav></header>
     <section className="booth-content" aria-labelledby="booth-title">
       <div className="booth-intro"><p className="eyebrow"><span /> مساحة للتحدي والاكتشاف</p><h1 id="booth-title">كل تجربة تبدأ <span>بمشارك</span>.</h1><p>أهلًا بفريق البوث. جهّز بيانات المشارك، وابدأوا الرحلة معًا.</p><div className="booth-step"><Users /><span>بيانات المشارك</span><span className="version-badge">نسخة تجريبية</span></div></div>
       <div className="participant-card entry-card">

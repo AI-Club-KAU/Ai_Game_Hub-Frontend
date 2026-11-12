@@ -1,5 +1,5 @@
 import { type Participant, type ParticipantService, normalizeIdentifier, validIdentifier } from "./participant-service";
-/** Memory-only demo data: reset on reload/lock, never stored in the browser. */
+/** Memory-only demo data: reset on reload, never stored in the browser. */
 const records = new Map<string, Participant>();
 let offline = false;
 function reset() {
@@ -32,3 +32,6 @@ export const mockParticipantService: ParticipantService = {
     return participant ? { status: "success", participant: { ...participant } } : { status: "not-found", message: "لم نعثر على مشارك بهذا الرقم. راجع الرقم أو اختر مشارك جديد." };
   },
 };
+
+/** Internal mock lookup; identifiers never enter leaderboard responses. */
+export function mockParticipantName(identifier: string) { return records.get(identifier)?.fullName ?? "مشارك تجريبي"; }

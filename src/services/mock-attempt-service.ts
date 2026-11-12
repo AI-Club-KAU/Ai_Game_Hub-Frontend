@@ -18,6 +18,7 @@ export const mockAttemptService: AttemptService = {
   },
   start(request) {
     const saved = completedRequests.get(request.requestId);
+    if (saved && activeAttempts.get(saved.attempt.participantIdentifier)?.id !== saved.attempt.id) return Promise.resolve(rejected("انتهت هذه المحاولة؛ حدّث حالة المشارك."));
     if (saved) return Promise.resolve(sameRequest(saved.request, request) ? { status: "started", attempt: { ...saved.attempt } } : rejected("معرّف الطلب مستخدم لاختيار آخر. حدّث الحالة."));
     const pending = pendingRequests.get(request.requestId);
     if (pending) return sameRequest(pending.request, request) ? pending.promise : Promise.resolve(rejected("طلب آخر يستخدم نفس المعرّف."));
