@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, Gamepad2, LoaderCircle, LockKeyhole, Search, U
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EligibilityPanel } from "@/features/eligibility/eligibility-panel";
-import { participantService, participantDemo, eligibilityDemo, resultDemo, leaderboardDemo } from "@/services";
+import { participantService, participantDemo, eligibilityDemo, resultDemo, leaderboardDemo, isMock } from "@/services";
 import { normalizeIdentifier, validIdentifier, type Participant } from "@/services/participant-service";
 
 import { LeaderboardScreen } from "@/features/leaderboard/leaderboard-screen";
@@ -54,13 +54,13 @@ export function ParticipantScreen({ onLock }: { onLock: () => void }) {
   return <main className="access-shell booth-shell">
     <header className="site-header"><div className="brand"><span className="brand-symbol"><Gamepad2 /></span><span><b dir="ltr">AI CLUB<span className="brand-dot">.</span></b><small>نادي الذكاء الاصطناعي</small></span></div><nav className="booth-navigation" aria-label="تنقل البوث">{!participant && <Button variant="outline" size="sm" disabled={busy} onClick={() => { clear(); leaderboardDemo.reset(); setShowLeaderboard(true); }}>لوحة المتصدرين</Button>}<Button variant="outline" size="sm" disabled={busy} onClick={() => { participantDemo?.setOffline(false); eligibilityDemo.reset(); onLock(); }}><LockKeyhole />قفل البوث</Button></nav></header>
     <section className="booth-content" aria-labelledby="booth-title">
-      <div className="booth-intro"><p className="eyebrow"><span /> مساحة للتحدي والاكتشاف</p><h1 id="booth-title">كل تجربة تبدأ <span>بمشارك</span>.</h1><p>أهلًا بفريق البوث. جهّز بيانات المشارك، وابدأوا الرحلة معًا.</p><div className="booth-step"><Users /><span>بيانات المشارك</span><span className="version-badge">نسخة تجريبية</span></div></div>
+      <div className="booth-intro"><p className="eyebrow"><span /> مساحة للتحدي والاكتشاف</p><h1 id="booth-title">كل تجربة تبدأ <span>بمشارك</span>.</h1><p>أهلًا بفريق البوث. جهّز بيانات المشارك، وابدأوا الرحلة معًا.</p><div className="booth-step"><Users /><span>بيانات المشارك</span><span className="version-badge">{isMock ? "نسخة تجريبية" : "البوث"}</span></div></div>
       <div className="participant-card entry-card">
         {participant ? <>
           <div className="access-icon"><CheckCircle2 /></div><h2 ref={titleRef} tabIndex={-1}>{mode === "new" ? "تم تسجيل المشارك" : "تم استرجاع المشارك"}</h2>
           <p className="card-description">راجع البيانات وحالة المشاركة، ثم اختر اللعبة المتاحة.</p>
           <dl className="participant-details"><div><dt>الاسم الكامل</dt><dd>{participant.fullName}</dd></div><div><dt>الرقم التعريفي</dt><dd><bdi dir="ltr">{participant.identifier}</bdi></dd></div></dl>
-          <p className="demo-result">تمت العملية في الذاكرة التجريبية فقط. لا توجد بيانات محفوظة على السيرفر.</p>
+          {isMock && <p className="demo-result">تمت العملية في الذاكرة التجريبية فقط. لا توجد بيانات محفوظة على السيرفر.</p>}
           <EligibilityPanel key={participant.identifier} participantIdentifier={participant.identifier} onLaunch={setPlaying} onBusy={setBusy} />
           <Button disabled={busy} className="w-full" onClick={() => clear()}>تجهيز مشارك آخر<ArrowLeft /></Button>
         </> : <>
@@ -79,7 +79,7 @@ export function ParticipantScreen({ onLock }: { onLock: () => void }) {
           </form>
         </>}
       </div>
-      <aside className="participant-demo demo-note"><span className="demo-label">بيانات تجربة فقط</span><p>استرجع الرقم <code dir="ltr">00123</code> لعرض مشارك تجريبي، أو سجّل رقمًا جديدًا ثم استرجعه. تُحذف السجلات والمحاولات التجريبية عند تحديث الصفحة. قفل البوث يخفي بيانات المشارك ويحافظ على المحاولة في ذاكرة العرض.</p>{participantDemo && !participant && <label className="offline-control"><input type="checkbox" checked={offline} disabled={busy} onChange={e => { setOffline(e.target.checked); participantDemo.setOffline(e.target.checked); }} />محاكاة تعذّر الاتصال</label>}</aside>
+      {isMock && <aside className="participant-demo demo-note"><span className="demo-label">بيانات تجربة فقط</span><p>استرجع الرقم <code dir="ltr">00123</code> لعرض مشارك تجريبي، أو سجّل رقمًا جديدًا ثم استرجعه. تُحذف السجلات والمحاولات التجريبية عند تحديث الصفحة. قفل البوث يخفي بيانات المشارك ويحافظ على المحاولة في ذاكرة العرض.</p>{participantDemo && !participant && <label className="offline-control"><input type="checkbox" checked={offline} disabled={busy} onChange={e => { setOffline(e.target.checked); participantDemo.setOffline(e.target.checked); }} />محاكاة تعذّر الاتصال</label>}</aside>}
     </section><footer className="site-footer"><span>نادي الذكاء الاصطناعي / نصنع التجربة معًا</span><span dir="ltr">AI CLUB GAMES HUB · DEV WEEK</span></footer>
   </main>;
 }

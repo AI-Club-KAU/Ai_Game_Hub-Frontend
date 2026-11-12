@@ -1,5 +1,5 @@
 /** Frontend requirements only; not a final API contract. */
-export type Participant = { identifier: string; fullName: string };
+export type Participant = { id?: string; identifier: string; fullName: string };
 export type ParticipantResult =
   | { status: "success"; participant: Participant }
   | { status: "duplicate" | "not-found" | "invalid"; message: string };

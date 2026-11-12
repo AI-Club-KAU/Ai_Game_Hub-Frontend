@@ -1,2 +1,3 @@
 import { AccessScreen } from "@/features/access/access-screen";
-export default function Home() { return <AccessScreen />; }
+import { SessionBoundary } from "@/features/access/session-renewal";
+export default function Home() { return <SessionBoundary><AccessScreen /></SessionBoundary>; }

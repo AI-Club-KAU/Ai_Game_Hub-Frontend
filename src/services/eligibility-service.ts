@@ -4,11 +4,11 @@ export type EventDay = 1 | 2 | 3 | 4 | 5;
 export type GameAvailability = {
   id: string; title: string; maxScore: number; eligible: boolean; reason: string;
 };
-export type ApprovedResult = { gameId: string; gameTitle: string; day: EventDay; score: number };
+export type ApprovedResult = { gameId: string; gameTitle: string; day: EventDay | string; score: number };
 export type EligibilitySnapshot = {
   participantIdentifier: string;
-  section: BoothSection;
-  day: EventDay;
+  section: BoothSection | null;
+  day: EventDay | string;
   status: "eligible" | "blocked";
   message: string;
   games: GameAvailability[];

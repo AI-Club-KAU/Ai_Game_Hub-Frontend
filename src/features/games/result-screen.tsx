@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { resultService, resultDemo } from "@/services";
+import { resultService, resultDemo, isMock } from "@/services";
 import type { ResultRequest, SavedResult } from "@/services/result-service";
 
 export function ResultScreen({ request, onComplete }: { request: ResultRequest; onComplete: () => void }) {
@@ -39,14 +39,14 @@ export function ResultScreen({ request, onComplete }: { request: ResultRequest; 
     return () => { clearInterval(interval); clearTimeout(timeout); };
   }, [saved]);
   return <main className="result-shell" dir="rtl"><section className="result-card" aria-busy={busy}>
-    <p className="eyebrow">نادي الذكاء الاصطناعي · نتيجة تجريبية</p>
+    <p className="eyebrow">نادي الذكاء الاصطناعي · {isMock ? "نتيجة تجريبية" : "نتيجة المشاركة"}</p>
     <h1 ref={heading} tabIndex={-1}>{saved ? "تم تأكيد حفظ النتيجة" : busy ? "جارٍ التحقق من حفظ النتيجة…" : "بانتظار تأكيد الحفظ"}</h1>
     {saved ? <><p>{saved.gameTitle}</p><p className="result-score" dir="ltr"><b>{saved.score}</b><span> / 100</span></p><p role="status">العودة إلى البوث خلال {remaining} ثوانٍ</p></> : <>
       <p>لن تبدأ العودة التلقائية حتى تؤكد الخدمة حفظ النتيجة.</p>
       {message && <p role="alert" className="error-message">{message}</p>}
       <div className="result-actions"><Button disabled={busy} onClick={() => void perform()}>إعادة محاولة الحفظ</Button><Button disabled={busy} variant="outline" onClick={() => void perform(true)}>التحقق من حالة الحفظ</Button></div>
-      <details><summary>محاكاة خدمة حفظ النتيجة</summary><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" disabled={busy} defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label></details>
+      {isMock && <details><summary>محاكاة خدمة حفظ النتيجة</summary><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" disabled={busy} defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label></details>}
     </>}
-    <small>محاكاة في ذاكرة الصفحة فقط؛ تحديث الصفحة يمسح البيانات التجريبية.</small>
+    {isMock && <small>محاكاة في ذاكرة الصفحة فقط؛ تحديث الصفحة يمسح البيانات التجريبية.</small>}
   </section></main>;
 }

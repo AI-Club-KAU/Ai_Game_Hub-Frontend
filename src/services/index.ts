@@ -1,10 +1,23 @@
-// Replace this adapter when Mada provides the real access/session contract.
-export { mockAccessService as accessService } from "./mock-access-service";
-export { mockParticipantService as participantService, participantDemo } from "./mock-participant-service";
 
-export { mockEligibilityService as eligibilityService, eligibilityDemo } from "./mock-eligibility-service";
-
-export { mockAttemptService as attemptService, attemptDemo } from "./mock-attempt-service";
-export { mockResultService as resultService, resultDemo } from "./mock-result-service";
-
-export { mockLeaderboardService as leaderboardService, leaderboardDemo } from "./mock-leaderboard-service";
+import { isMock, apiBaseUrl } from "./runtime-config";
+import { createBackendServices } from "./backend-services";
+import { mockAccessService } from "./mock-access-service";
+import { mockParticipantService } from "./mock-participant-service";
+import { mockEligibilityService } from "./mock-eligibility-service";
+import { mockAttemptService } from "./mock-attempt-service";
+import { mockResultService } from "./mock-result-service";
+import { mockLeaderboardService } from "./mock-leaderboard-service";
+const backend = createBackendServices(apiBaseUrl);
+export { isMock };
+export const accessService = isMock ? mockAccessService : backend.access;
+export const participantService = isMock ? mockParticipantService : backend.participant;
+export const eligibilityService = isMock ? mockEligibilityService : backend.eligibility;
+export const attemptService = isMock ? mockAttemptService : backend.attempts;
+export const resultService = isMock ? mockResultService : backend.results;
+export const leaderboardService = isMock ? mockLeaderboardService : backend.leaderboard;
+export const clearBackendSession = backend.clear;
+export { participantDemo } from "./mock-participant-service";
+export { eligibilityDemo } from "./mock-eligibility-service";
+export { attemptDemo } from "./mock-attempt-service";
+export { resultDemo } from "./mock-result-service";
+export { leaderboardDemo } from "./mock-leaderboard-service";
