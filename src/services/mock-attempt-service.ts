@@ -1,5 +1,5 @@
 import type { AttemptService, GameAttempt, StartRequest, StartResult } from "./attempt-service";
-import { activeAttempts } from "./mock-attempt-store";
+import { activeAttempts, activeAttemptFor, activeAttemptsFor } from "./mock-attempt-store";
 import { mockEligibilityService } from "./mock-eligibility-service";
 export type StartDemoMode = "normal" | "offline" | "lost-response" | "rejected";
 let mode: StartDemoMode = "normal";
@@ -13,12 +13,17 @@ export const mockAttemptService: AttemptService = {
   async inspect(identifier) {
     await new Promise(resolve => setTimeout(resolve, 350));
     if (mode === "offline") throw new Error("Mock connection unavailable");
-    const attempt = activeAttempts.get(identifier);
+    const attempt = activeAttemptFor(identifier);
     return attempt ? { ...attempt } : null;
+  },
+  async listActive(identifier) {
+    await new Promise(resolve => setTimeout(resolve, 350));
+    if (mode === "offline") throw new Error("Mock connection unavailable");
+    return activeAttemptsFor(identifier).map(attempt => ({ ...attempt }));
   },
   start(request) {
     const saved = completedRequests.get(request.requestId);
-    if (saved && activeAttempts.get(saved.attempt.participantIdentifier)?.id !== saved.attempt.id) return Promise.resolve(rejected("انتهت هذه المحاولة؛ حدّث حالة المشارك."));
+    if (saved && !activeAttempts.has(saved.attempt.id)) return Promise.resolve(rejected("انتهت هذه المحاولة؛ حدّث حالة المشارك."));
     if (saved) return Promise.resolve(sameRequest(saved.request, request) ? { status: "started", attempt: { ...saved.attempt } } : rejected("معرّف الطلب مستخدم لاختيار آخر. حدّث الحالة."));
     const pending = pendingRequests.get(request.requestId);
     if (pending) return sameRequest(pending.request, request) ? pending.promise : Promise.resolve(rejected("طلب آخر يستخدم نفس المعرّف."));
@@ -30,12 +35,12 @@ export const mockAttemptService: AttemptService = {
         await new Promise(resolve => setTimeout(resolve, 450));
         if (currentMode === "offline") throw new Error("Mock offline before start");
         if (currentMode === "rejected") return rejected("لم تعتمد الخدمة بدء المحاولة. حدّث الأهلية ثم أعد الاختيار.");
-        if (activeAttempts.has(request.participantIdentifier)) return rejected("توجد محاولة نشطة لهذا المشارك. تحقّق من حالتها لاستئنافها.");
+        if (activeAttemptsFor(request.participantIdentifier).some(attempt => attempt.gameId === request.gameId)) return rejected("توجد محاولة نشطة لهذا المشارك. تحقّق من حالتها لاستئنافها.");
         const eligibility = await mockEligibilityService.load(request.participantIdentifier);
         const game = eligibility.games.find(item => item.id === request.gameId && item.eligible);
-        if (!game || eligibility.day !== request.day || eligibility.section !== request.section) return rejected("تغيّرت الأهلية أو الجدول. حدّث الحالة واختر لعبة مسموحة.");
+        if (!game) return rejected("تغيّرت أهلية اللعبة. حدّث الحالة واختر لعبة مسموحة.");
         const attempt: GameAttempt = { id: crypto.randomUUID(), participantIdentifier: request.participantIdentifier, gameId: game.id, gameTitle: game.title, day: eligibility.day, section: eligibility.section, status: "active" };
-        activeAttempts.set(request.participantIdentifier, attempt);
+        activeAttempts.set(attempt.id, attempt);
         completedRequests.set(request.requestId, { request: { ...request }, attempt });
         if (currentMode === "lost-response") throw new Error("Mock response lost after reservation");
         return { status: "started", attempt: { ...attempt } };

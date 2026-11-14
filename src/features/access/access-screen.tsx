@@ -56,7 +56,7 @@ export function AccessScreen() {
           <h1 id="intro-title">فكّر. العب.<br /><span>اترك بصمتك</span><span className="title-dot">.</span></h1>
           <p className="intro-description">تجارب تصنعها أقسام النادي، وتحديات تختبر مهاراتك.<br className="desktop-break" /> كل لعبة فرصة جديدة لتكتشف ما تقدر عليه.</p></div>
           <div className="orb-scene" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="orb"><div className="orb-grid" /><Fingerprint className="orb-fingerprint" strokeWidth={0.8} /></div><span className="floating-chip chip-top"><Sparkles size={14} /> فضول يتحوّل إلى تجربة</span><span className="floating-chip chip-bottom"><span className="status-dot" /> جاهز للتحدي؟ <ArrowUpLeft size={14} /></span><span className="cross cross-one">+</span><span className="cross cross-two">+</span></div>
-          <div className="event-facts"><div><strong>05</strong><span>أيام من التحدي</span></div><div><strong>05</strong><span>ألعاب من أقسامنا</span></div><div><strong>500</strong><span>نقطة تنتظرك</span></div></div>
+          <div className="event-facts"><div><strong>01</strong><span>فرصة لكل لعبة</span></div><div><strong>05</strong><span>ألعاب من أقسامنا</span></div><div><strong>500</strong><span>نقطة تنتظرك</span></div></div>
         </section>
         <section className="entry-column" aria-label="وصول عضو النادي">
           <div className="entry-card" id="access-form">

@@ -10,7 +10,7 @@ import { platformSession } from "./platform-session";
 type Student = { id: string; student_number: string; full_name: string };
 type Attempt = { id: string; student_id: string; game_id: number; status: "started" | "completed"; score: number | null; play_date: string; started_at: string };
 type Game = { id: number; name: string; max_score: number; is_active: boolean; attempt: Attempt | null; eligible_to_start: boolean };
-type Progress = { student_id: string; play_date: string; daily_slot_consumed: boolean; total_score: number; games: Game[] };
+type Progress = { student_id: string; play_date: string; total_score: number; games: Game[] };
 const validScore = (value: unknown): value is number => Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 100;
 export function createBackendServices(base: string, transport: typeof fetch = fetch) {
   const request = createApiClient(base, transport);
@@ -74,9 +74,9 @@ export function createBackendServices(base: string, transport: typeof fetch = fe
   const eligibility: EligibilityService = { async load(identifier) {
     const data = await progress(identifier);
     const games = data.games.map(game => ({id:String(game.id),title:game.name,maxScore:game.max_score,eligible:game.eligible_to_start,
-      reason:game.attempt ? (game.attempt.status === "started" ? "توجد محاولة غير مكتملة لهذه اللعبة." : "سبق إكمال هذه اللعبة.") : data.daily_slot_consumed ? "استُهلكت فرصة المشاركة اليوم." : !game.is_active ? "اللعبة غير نشطة." : "متاحة وفق الخدمة."}));
+      reason:game.attempt ? (game.attempt.status === "started" ? "توجد محاولة غير مكتملة لهذه اللعبة." : "سبق إكمال هذه اللعبة.") : !game.is_active ? "اللعبة غير نشطة." : game.eligible_to_start ? "متاحة وفق الخدمة." : "غير متاحة وفق حالة الخدمة."}));
     return {participantIdentifier:identifier,day:data.play_date,section:null,status:games.some(game=>game.eligible)?"eligible":"blocked",
-      message:data.daily_slot_consumed?"استُهلكت فرصة اليوم، حتى لو لم تكتمل المحاولة.":games.some(game=>game.eligible)?"اختر لعبة متاحة وفق حالة الخدمة.":"لا توجد ألعاب متاحة حاليًا.",
+      message:games.some(game=>game.eligible)?"اختر لعبة متاحة وفق حالة الخدمة.":"لا توجد ألعاب متاحة حاليًا.",
       games,results:data.games.filter(game=>game.attempt?.status==="completed").map(game=>{const result=saved(game.attempt!);return {gameId:result.gameId,gameTitle:result.gameTitle,day:result.day,score:result.score};}),totalScore:data.total_score};
   }};
   const attempts: AttemptService = {

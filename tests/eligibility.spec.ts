@@ -11,11 +11,11 @@ async function openEligibility(page: Page) {
   await page.getByText("إعدادات العرض التجريبي", { exact: true }).click();
 }
 const enabledGames = (page: Page) => page.locator('input[name="eligible-game"]:enabled');
-test("separate schedules and exceptional day allow only one confirmed choice", async ({ page }) => {
+test("all five games stay available across days and sections with one selection at a time", async ({ page }) => {
   await openEligibility(page);
-  await expect(enabledGames(page)).toHaveCount(1);
+  await expect(enabledGames(page)).toHaveCount(5);
   await page.getByLabel("قسم التجربة", { exact: true }).selectOption("female-students");
-  await expect(enabledGames(page)).toHaveCount(2);
+  await expect(enabledGames(page)).toHaveCount(5);
   await page.getByRole("radio", { name: /لعبة تجريبية 03/ }).check();
   await page.getByRole("radio", { name: /لعبة تجريبية 04/ }).check();
   await expect(page.locator('input[name="eligible-game"]:checked')).toHaveCount(1);
@@ -24,30 +24,24 @@ test("separate schedules and exceptional day allow only one confirmed choice", a
   await expect(enabledGames(page)).toHaveCount(0);
   await expect(page.locator(".previous-results")).toContainText("لا توجد نتائج");
   await page.getByRole("button", { name: "تغيير الاختيار" }).click();
-  await expect(enabledGames(page)).toHaveCount(2);
+  await expect(enabledGames(page)).toHaveCount(5);
   await expect(page.locator('input[name="eligible-game"]:checked')).toHaveCount(0);
   await page.getByRole("radio", { name: /لعبة تجريبية 03/ }).check();
   await page.getByLabel("يوم التجربة", { exact: true }).selectOption("4");
-  await expect(enabledGames(page)).toHaveCount(1);
+  await expect(enabledGames(page)).toHaveCount(5);
   await expect(page.locator('input[name="eligible-game"]:checked')).toHaveCount(0);
   await expect(page.locator(".selection-review")).toHaveCount(0);
 });
-test("daily limit, once-per-event and active attempt block correctly", async ({ page }) => {
+test("completed or unfinished game blocks only itself, not other games today", async ({ page }) => {
   await openEligibility(page);
-  await page.getByLabel("قسم التجربة", { exact: true }).selectOption("female-students");
-  await page.getByLabel("سجل تجريبي", { exact: true }).selectOption("played-today");
-  await expect(page.locator(".eligibility-status")).toContainText("اكتملت مشاركة اليوم");
-  await expect(enabledGames(page)).toHaveCount(0);
-  await page.getByLabel("سجل تجريبي", { exact: true }).selectOption("repeated");
-  await expect(enabledGames(page)).toHaveCount(1);
-  await expect(page.getByRole("radio", { name: /لعبة تجريبية 03/ })).toBeDisabled();
-  await expect(page.getByRole("radio", { name: /لعبة تجريبية 04/ })).toBeEnabled();
-  await page.getByLabel("قسم التجربة", { exact: true }).selectOption("students");
-  await expect(page.locator(".eligibility-status")).toContainText("لا توجد ألعاب مؤهلة");
-  await expect(enabledGames(page)).toHaveCount(0);
-  await page.getByLabel("سجل تجريبي", { exact: true }).selectOption("active");
-  await expect(page.locator(".eligibility-status")).toContainText("محاولة قيد التنفيذ");
-  await expect(enabledGames(page)).toHaveCount(0);
+  for (const history of ["played-today","repeated","active"]) {
+    await page.getByLabel("سجل تجريبي",{exact:true}).selectOption(history);
+    await expect(enabledGames(page)).toHaveCount(4);
+    await expect(page.getByRole("radio",{name:/لعبة تجريبية 03/})).toBeDisabled();
+    await expect(page.getByRole("radio",{name:/لعبة تجريبية 04/})).toBeEnabled();
+  }
+  await page.getByLabel("قسم التجربة",{exact:true}).selectOption("female-students");
+  await expect(enabledGames(page)).toHaveCount(4);
 });
 test("approved totals, all five games, and participant reset", async ({ page }) => {
   await openEligibility(page);
@@ -55,7 +49,7 @@ test("approved totals, all five games, and participant reset", async ({ page }) 
   await expect(page.locator(".progress-stats")).toContainText("75");
   await expect(page.locator(".previous-results li")).toHaveCount(1);
   await page.getByLabel("سجل تجريبي", { exact: true }).selectOption("complete");
-  await expect(page.getByLabel("يوم التجربة", { exact: true })).toHaveValue("5");
+  await expect(page.getByLabel("يوم التجربة", { exact: true })).toHaveValue("3");
   await expect(page.locator(".progress-stats strong").first()).toHaveText("500 / 500");
   await expect(page.locator(".previous-results li")).toHaveCount(5);
   await expect(enabledGames(page)).toHaveCount(0);
@@ -79,14 +73,14 @@ test("loading failure clears choice, retries safely and ignores stale responses"
   await page.getByRole("checkbox", { name: "محاكاة تعذّر تحميل الأهلية" }).uncheck();
   await page.getByLabel("قسم التجربة", { exact: true }).selectOption("female-students");
   await page.getByLabel("قسم التجربة", { exact: true }).selectOption("students");
-  await expect(enabledGames(page)).toHaveCount(1);
+  await expect(enabledGames(page)).toHaveCount(5);
   await expect(page.locator(".eligibility-context")).toContainText("الطلاب");
   await expect(page.locator('input[name="eligible-game"]:checked')).toHaveCount(0);
 });
 test("eligibility layout on desktop and mobile has no horizontal overflow", async ({ page }) => {
   await openEligibility(page);
   await page.getByLabel("قسم التجربة", { exact: true }).selectOption("female-students");
-  await expect(enabledGames(page)).toHaveCount(2);
+  await expect(enabledGames(page)).toHaveCount(5);
   await page.getByRole("radio", { name: /لعبة تجريبية 04/ }).check();
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });

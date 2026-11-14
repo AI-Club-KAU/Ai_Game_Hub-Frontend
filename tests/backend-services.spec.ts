@@ -14,7 +14,7 @@ function fixture() {
   if(path==="/students/login" || path==="/students/register")return json({student:{id:sid,student_number:"00123",full_name:"مشارك الاختبار"}});
   if(path.endsWith("/progress")) {
    if(outage)throw new Error("network");
-   return json({student_id:sid,play_date:"2026-11-12",daily_slot_consumed:attempts.length>0,total_score:attempts.reduce((sum,a)=>sum+(a.score??0),0),games:[1,2,3,4,5].map(id=>({id,name:"لعبة "+id,max_score:100,is_active:true,attempt:attempts.find(a=>a.game_id===id)??null,eligible_to_start:attempts.length===0}))});
+   return json({student_id:sid,play_date:"2026-11-12",total_score:attempts.reduce((sum,a)=>sum+(a.score??0),0),games:[1,2,3,4,5].map(id=>({id,name:"لعبة "+id,max_score:100,is_active:true,attempt:attempts.find(a=>a.game_id===id)??null,eligible_to_start:!attempts.some(a=>a.game_id===id)}))});
   }
   if(path==="/attempts/start"){const a={id:"attempt-"+body.game_id,student_id:sid,game_id:body.game_id,status:"started",score:null,play_date:"2026-11-12",started_at:"2026-11-12T10:00:00Z"};attempts.push(a);return json({attempt:a},201);}
   if(path==="/attempts/finish"){
@@ -92,4 +92,27 @@ test("ambiguous Start network failure is never automatically retried",async()=>{
  const client=createApiClient("https://api.test",async()=>{writes++;throw new Error("response lost");});
  await expect(client("/attempts/start",{student_id:sid,game_id:1})).rejects.toThrow();
  expect(writes).toBe(1);
+});
+
+test("completion today only disables the completed game and keeps authoritative eligibility",async()=>{
+ const f=fixture();await start(f);await f.api.results.save({attemptId:"attempt-1",score:80});
+ const progress=await f.api.eligibility.load("00123");
+ expect(progress.status).toBe("eligible");
+ expect(progress.games.map(g=>g.eligible)).toEqual([false,true,true,true,true]);
+ expect(progress.message).not.toContain("فرصة اليوم");
+ expect(progress.games[1].reason).toBe("متاحة وفق الخدمة.");
+ expect(progress.results[0].score).toBe(80);
+});
+test("eligible_to_start remains authoritative even for an active game without a previous attempt",async()=>{
+ platformSession.accept("test",3600);
+ const api=createBackendServices("https://api.test",async(input)=>{
+  const data=String(input).endsWith("/students/login")?{student:{id:sid,student_number:"00123",full_name:"Test"}}:
+  {student_id:sid,play_date:"2026-11-14",daily_slot_consumed:true,total_score:0,games:[1,2].map(id=>({id,name:"Game "+id,max_score:100,is_active:true,attempt:null,eligible_to_start:id===2}))};
+  return new Response(JSON.stringify(data));
+ });
+ await api.participant.find("00123");
+ const data=await api.eligibility.load("00123");
+ expect(data.games.map(g=>g.eligible)).toEqual([false,true]);
+ expect(data.games[0].reason).toContain("غير متاحة");
+ expect(data.status).toBe("eligible");
 });

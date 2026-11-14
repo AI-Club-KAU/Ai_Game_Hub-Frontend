@@ -27,7 +27,7 @@ export function ParticipantScreen({ onLock }: { onLock: () => void }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const idRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { titleRef.current?.focus(); }, [participant]);
+  useEffect(() => { if (!playing) titleRef.current?.focus(); }, [participant, playing]);
   useEffect(() => { if (error?.field === "name") nameRef.current?.focus(); else if (error) idRef.current?.focus(); }, [error]);
   function clear(nextMode: Mode = "new") {
     eligibilityDemo.reset(); resultDemo.reset();
@@ -50,7 +50,8 @@ export function ParticipantScreen({ onLock }: { onLock: () => void }) {
     } finally { inFlight.current = false; setBusy(false); }
   }
   if (showLeaderboard) return <LeaderboardScreen onReturn={() => { leaderboardDemo.reset(); setShowLeaderboard(false); }} />;
-  if (playing) return <GameContainer attempt={playing} onReturn={() => setPlaying(null)} onComplete={() => { setPlaying(null); setBusy(false); clear(); }} />;
+  // Remounting EligibilityPanel refreshes progress without clearing the participant or demo context.
+  if (playing) return <GameContainer attempt={playing} onReturn={() => setPlaying(null)} onComplete={() => { setPlaying(null); setBusy(false); resultDemo.reset(); }} />;
   return <main className="access-shell booth-shell">
     <header className="site-header"><div className="brand"><span className="brand-symbol"><Gamepad2 /></span><span><b dir="ltr">AI CLUB<span className="brand-dot">.</span></b><small>نادي الذكاء الاصطناعي</small></span></div><nav className="booth-navigation" aria-label="تنقل البوث">{!participant && <Button variant="outline" size="sm" disabled={busy} onClick={() => { clear(); leaderboardDemo.reset(); setShowLeaderboard(true); }}>لوحة المتصدرين</Button>}<Button variant="outline" size="sm" disabled={busy} onClick={() => { participantDemo?.setOffline(false); eligibilityDemo.reset(); onLock(); }}><LockKeyhole />قفل البوث</Button></nav></header>
     <section className="booth-content" aria-labelledby="booth-title">

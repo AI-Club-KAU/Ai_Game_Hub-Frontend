@@ -48,6 +48,8 @@ test("confirmed saved score appears in leaderboard without exposing participant 
  await page.getByRole("button",{name:"إنهاء تجريبي بنتيجة 80"}).click();
  await expect(page.getByRole("heading",{name:"تم تأكيد حفظ النتيجة"})).toBeVisible();
  await page.clock.fastForward(10050);
+ await expect(page.locator(".participant-details dd").last()).toHaveText("00123");
+ await page.getByRole("button",{name:"تجهيز مشارك آخر",exact:true}).click();
  await page.getByRole("button",{name:"لوحة المتصدرين",exact:true}).click();
  await expect(page.locator(".leaderboard-row")).toHaveCount(1);
  await expect(page.locator(".leaderboard-name h2")).toHaveText("مشارك تجريبي");

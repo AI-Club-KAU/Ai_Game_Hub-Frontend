@@ -13,11 +13,11 @@ export const mockResultService: ResultService = {
     const existing = savedResults.get(request.attemptId);
     if (existing) return existing.score === request.score ? { status: "saved", result: { ...existing } } : { status: "rejected", message: "توجد نتيجة مختلفة محفوظة لهذه المحاولة؛ تحقق من حالة الحفظ." };
     const attempt = [...activeAttempts.values()].find(value => value.id === request.attemptId);
-    if (!attempt || !Number.isFinite(request.score) || request.score < 0 || request.score > 100 || scenario === "rejected") return { status: "rejected", message: "لم تعتمد الخدمة النتيجة. أعد الجهاز إلى عضو النادي للتحقق." };
+    if (!attempt || !Number.isInteger(request.score) || request.score < 0 || request.score > 100 || scenario === "rejected") return { status: "rejected", message: "لم تعتمد الخدمة النتيجة. أعد الجهاز إلى عضو النادي للتحقق." };
     const result: SavedResult = { ...request, participantIdentifier: attempt.participantIdentifier, gameId: attempt.gameId, gameTitle: attempt.gameTitle, day: attempt.day };
     // Atomic in this in-memory mock: one result per attempt, then close the attempt.
     savedResults.set(attempt.id, result);
-    activeAttempts.delete(attempt.participantIdentifier);
+    activeAttempts.delete(attempt.id);
     if (scenario === "lost-response") throw new Error("Response lost after saving");
     return { status: "saved", result: { ...result } };
   },

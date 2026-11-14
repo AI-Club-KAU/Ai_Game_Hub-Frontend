@@ -72,3 +72,7 @@
 .leaderboard-demo summary { cursor:pointer; min-height:48px; }
 .leaderboard-demo select { width:100%; display:block; min-height:48px; padding:12px; margin-block:12px; border-radius:8px; background:#232626; color:white; }
 @media(max-width:600px) { .leaderboard-row { gap:12px; padding:20px 14px; } .leaderboard-rank { min-width:24px; flex-direction:column; font-size:20px; } .leaderboard-points strong { font-size:28px; } .leaderboard-content { margin-top:36px; } .booth-shell .site-header { align-items:flex-start; gap:12px; } .booth-navigation { max-width:180px; } }
+
+.game-interaction-shield { position: absolute; inset: 0; z-index: 5; background: transparent; }
+.result-embedded { padding: 20px 0; }
+.result-embedded .result-card { margin: auto; }

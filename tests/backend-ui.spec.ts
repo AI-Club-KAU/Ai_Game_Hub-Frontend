@@ -1,7 +1,7 @@
 
 import {test,expect,type Page} from "@playwright/test";
 const sid="00000000-0000-0000-0000-000000000001";
-async function mockApi(page:Page,expire=false){
+async function mockApi(page:Page,expire=false,played=false){
  const writes:string[]=[];let leaderboardCalls=0;
  await page.route("https://wjhbdtznydxozorfanrx.supabase.co/functions/v1/**",async route=>{
   const request=route.request();const path=new URL(request.url()).pathname.split("/functions/v1")[1];
@@ -11,7 +11,7 @@ async function mockApi(page:Page,expire=false){
   expect(request.headers().authorization).toBe("Bearer fixture-token");
   if(request.method()==="POST")writes.push(path);
   if(path==="/students/login"||path==="/students/register")return respond({student:{id:sid,student_number:"00123",full_name:"مشارك فعلي للاختبار"}});
-  if(path.endsWith("/progress"))return respond({student_id:sid,play_date:"2026-11-12",total_score:0,daily_slot_consumed:false,games:[1,2,3,4,5].map(id=>({id,name:"لعبة "+id,max_score:100,is_active:true,attempt:null,eligible_to_start:true}))});
+  if(path.endsWith("/progress"))return respond({student_id:sid,play_date:"2026-11-12",total_score:played?80:0,games:[1,2,3,4,5].map(id=>({id,name:"لعبة "+id,max_score:100,is_active:true,attempt:played&&id===1?{id:"completed-1",student_id:sid,game_id:1,status:"completed",score:80,play_date:"2026-11-12",started_at:"2026-11-12T10:00:00Z"}:null,eligible_to_start:!played||id!==1}))});
   if(path==="/leaderboard"){
    if(expire&&leaderboardCalls++===0)return respond({error:{code:"invalid_platform_token"}},401);
    return respond({leaderboard:[{full_name:"اسم العرض",total_score:80,games_completed:1}]});
@@ -51,4 +51,18 @@ test("expired session renews in place and resumes the protected read",async({pag
  await expect(page.locator(".leaderboard-name h2")).toHaveText("اسم العرض");
  await expect(page.getByRole("dialog")).toHaveCount(0);
  expect(await page.evaluate(()=>localStorage.length+sessionStorage.length)).toBe(0);
+});
+
+test("completed game today leaves the other four selectable in live UI",async({page})=>{
+ await mockApi(page,false,true);await login(page);
+ await page.getByRole("button",{name:"مشارك سابق",exact:true}).click();
+ await page.locator("#participant-id").fill("00123");
+ await page.getByRole("button",{name:"استرجاع المشارك",exact:true}).click();
+ await expect(page.getByRole("radio",{name:/لعبة 1/})).toBeDisabled();
+ await expect(page.locator('input[name="eligible-game"]:enabled')).toHaveCount(4);
+ await expect(page.locator(".previous-results")).toContainText("80 / 100");
+ await expect(page.locator(".eligibility-status")).not.toContainText("فرصة اليوم");
+ await page.getByRole("radio",{name:/لعبة 2/}).check();
+ await page.getByRole("button",{name:"تأكيد اختيار اللعبة"}).click();
+ await expect(page.locator(".selection-confirmed")).toBeVisible();
 });

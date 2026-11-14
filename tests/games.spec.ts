@@ -53,7 +53,7 @@ test("lost Start response requires inspection and resumes existing attempt", asy
   await expect(page.locator("iframe")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "ابدأ اللعب", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "التحقق من حالة المحاولة" }).click();
-  await expect(page.locator(".eligibility-status")).toContainText("محاولة قيد التنفيذ");
+  await expect(page.getByRole("radio", { name: /لعبة تجريبية 03/ })).toBeDisabled();
   await page.getByRole("button", { name: "استئناف المحاولة" }).click();
   await expect(page.locator(".game-mode-footer")).toContainText("الحاوية جاهزة");
   await returnToStaff(page);
@@ -65,7 +65,7 @@ test("lost Start response requires inspection and resumes existing attempt", asy
   await page.locator("#participant-id").fill("00123");
   await page.getByRole("button", { name: "استرجاع المشارك", exact: true }).click();
   await expect(page.getByRole("button", { name: "استئناف المحاولة" })).toBeVisible();
-  await expect(page.locator('input[name="eligible-game"]:enabled')).toHaveCount(0);
+  await expect(page.locator('input[name="eligible-game"]:enabled')).toHaveCount(4);
 });
 test("offline and rejected Start do not launch a game", async ({ page }) => {
   await prepare(page);
