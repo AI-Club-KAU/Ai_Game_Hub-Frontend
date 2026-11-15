@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dev Run | سباق أسبوع التطوير</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+
+  <!-- ===== Start screen ===== -->
+  <section id="start-screen" class="screen">
+    <p class="eyebrow">AI CLUB · KAU · DEV WEEK</p>
+    <h1 class="game-title">Dev Run</h1>
+    <p class="game-subtitle">درّب نموذج الذكاء الاصطناعي وأطلقه قبل نهاية أسبوع التطوير</p>
+
+    <ul class="instructions">
+      <li>اجمع البيانات في طريقك، وتجنّب الأخطاء والفيروسات</li>
+      <li class="hint-mobile">الجوال: اسحب يمين ويسار وفوق وتحت</li>
+      <li class="hint-desktop">اللابتوب:
+        <span class="keys" dir="ltr"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span>
+        أو
+        <span class="keys" dir="ltr"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+      </li>
+    </ul>
+
+    <button id="start-btn" class="game-button">ابدأ اللعب</button>
+  </section>
+
+  <!-- ===== Game screen ===== -->
+  <section id="game-screen" class="screen is-hidden">
+    <div class="game-container">
+
+      <canvas id="game-canvas"></canvas>
+
+      <!-- HUD -->
+      <div class="hud">
+        <div class="hud-item">النقاط <span id="score">0</span></div>
+        <div class="hud-item"><span id="batteries">🔋🔋🔋</span></div>
+        <div class="hud-item">المرحلة <span id="stage">1</span></div>
+        <div class="hud-item">⏱ <span id="game-timer" dir="ltr">2:00</span></div>
+
+        <div class="hud-actions">
+          <button id="pause-btn" class="game-button hud-button" aria-label="إيقاف مؤقت">⏸</button>
+          <button id="fullscreen-btn" class="game-button hud-button" aria-label="ملء الشاشة">⛶</button>
+        </div>
+      </div>
+
+      <!-- Progress bars -->
+      <div class="progress-panel">
+
+        <div class="progress-container">
+          <span class="progress-label">جمع البيانات</span>
+          <div class="progress-bar">
+            <div id="data-progress" class="progress-fill"></div>
+          </div>
+          <span id="data-percentage" class="progress-percent">0%</span>
+        </div>
+
+        <div class="progress-container">
+          <span class="progress-label">التدريب</span>
+          <div class="progress-bar">
+            <div id="training-progress" class="progress-fill"></div>
+          </div>
+          <span id="training-percentage" class="progress-percent">0%</span>
+        </div>
+
+        <div class="progress-container">
+          <span class="progress-label">الإطلاق</span>
+          <div class="progress-bar">
+            <div id="deployment-progress" class="progress-fill"></div>
+          </div>
+          <span id="deployment-percentage" class="progress-percent">0%</span>
+        </div>
+
+      </div>
+
+      <!-- Pause overlay -->
+      <div id="pause-screen" class="overlay is-hidden">
+        <div class="overlay-box">
+          <h2>اللعبة متوقفة</h2>
+          <p>خذ نفس، وكمّل متى ما كنت جاهز</p>
+          <button id="resume-btn" class="game-button">استئناف</button>
+          <button id="pause-home-btn" class="game-button secondary-button">الصفحة الرئيسية</button>
+        </div>
+      </div>
+
+      <!-- Quiz overlay (English) -->
+      <div id="gate-question" class="overlay is-hidden">
+        <div class="quiz-container" dir="ltr" lang="en">
+          <p class="quiz-tag">Training Gate</p>
+          <h2 id="question-text">Question text appears here</h2>
+          <div id="quiz-options"></div>
+          <p id="quiz-feedback" class="quiz-feedback"></p>
+          <button id="continue-btn" class="game-button is-hidden">Continue</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== End screen ===== -->
+  <section id="end-screen" class="screen is-hidden">
+    <p class="eyebrow">نتيجة التدريب</p>
+    <h2 id="end-message">تم إطلاق النموذج بنجاح 🚀</h2>
+
+    <div class="final-score-box" dir="ltr">
+      <span id="final-score"></span>
+    </div>
+
+    <div class="score-breakdown">
+      <div class="breakdown-item">البيانات <span id="collectibles-score" dir="ltr"></span></div>
+      <div class="breakdown-item">الأسئلة <span id="quiz-score" dir="ltr"></span></div>
+      <div class="breakdown-item">مكافأة عدم الاصطدام <span id="collision-bonus" dir="ltr"></span></div>
+      <div class="breakdown-item">إكمال المهمة <span id="completion-bonus" dir="ltr"></span></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item">بيانات مجمّعة: <span id="collected-count" dir="ltr"></span></div>
+      <div class="stat-item">إجابات صحيحة: <span id="correct-answers" dir="ltr"></span></div>
+      <div class="stat-item">الاصطدامات: <span id="collision-count"></span></div>
+    </div>
+
+    <div class="end-actions">
+      <button id="restart-btn" class="game-button">العب مرة ثانية</button>
+      <button id="end-home-btn" class="game-button secondary-button">الصفحة الرئيسية</button>
+    </div>
+  </section>
+
+</body>
+
+</html>

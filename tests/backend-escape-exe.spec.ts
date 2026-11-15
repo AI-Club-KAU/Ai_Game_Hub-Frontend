@@ -93,14 +93,14 @@ test("only the official Live ID maps to ESCAPE; mock and QA never become Live as
   expect(getGameAsset("1", false)?.game).toBe("escape-exe");
   expect(getGameAsset("1", true)).toBeNull();
   expect(getGameAsset("mock", true)?.game).toBe("escape-exe");
-  for (const id of ["mock", "2", "3", "4", "5", "01", "unknown"]) {
+  for (const id of ["mock", "3", "4", "5", "01", "unknown"]) {
     expect(getGameAsset(id, false)).toBeNull(); expect(canLaunchGame(id, false)).toBe(false);
   }
 });
 
-test("new Live attempt starts once, opens the real isolated asset and blocks all four placeholders", async ({ page }) => {
+test("new Live attempt starts once, opens the real isolated asset and blocks the remaining placeholders", async ({ page }) => {
   const api = await backend(page); await identify(page);
-  for (const id of ["2", "3", "4", "5"]) {
+  for (const id of ["3", "4", "5"]) {
     await select(page, id);
     await expect(page.getByRole("button", { name: "ابدأ اللعب", exact: true })).toBeDisabled();
     await page.getByRole("button", { name: "تغيير الاختيار", exact: true }).click();

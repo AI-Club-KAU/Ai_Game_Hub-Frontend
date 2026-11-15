@@ -53,7 +53,7 @@ export function EligibilityPanel({ participantIdentifier, onLaunch, onBusy }: { 
     {state.kind === "error" && <div className="eligibility-error"><p role="alert">{state.message || "تعذّر تحميل حالة المشارك. لا يمكن تحديد الألعاب المسموحة حتى ينجح التحقق."}</p><Button variant="outline" onClick={() => reload()}>إعادة تحميل الأهلية</Button></div>}
     {state.kind === "conflict" && <div className="eligibility-error" role="alert"><h4>تعارض في السجل التجريبي</h4><p>{state.message}</p><p>لم يُعتمد مجموع النقاط أو عدد الألعاب المكتملة.</p><Button variant="outline" onClick={() => reload()}>إعادة التحقق من البيانات</Button></div>}
     {data && <>
-      {!isMock && <p className="games-help">تشغيل الألعاب يقتصر حاليًا على ESCAPE.EXE؛ بقية ملفات الألعاب لم تُعتمد بعد.</p>}
+      {!isMock && <p className="games-help">تشغيل الألعاب متاح لـESCAPE.EXE وDev Run؛ الألعاب 3–5 لم تُعتمد بعد.</p>}
       <div className="eligibility-context"><span>{isMock ? "اليوم " : "تاريخ الرياض: "}{data.day}{data.section ? " · " + (data.section === "students" ? "الطلاب" : "الطالبات") : ""}</span><span className="version-badge">{isMock ? "بيانات تجريبية" : "بيانات الخدمة"}</span></div>
       <p className={data.status === "eligible" ? "eligibility-status eligible" : "eligibility-status"} role="status">{data.message}</p>
       <div className="progress-stats"><div><strong>{data.totalScore}<small> / {isMock ? MOCK_MAX_POINTS : 500}</small></strong><span>مجموع النتائج المعتمدة</span></div><div><strong>{data.results.length}<small> / {isMock ? MOCK_GAME_CATALOG.length : 5}</small></strong><span>ألعاب مكتملة · الإكمال اختياري</span></div></div>

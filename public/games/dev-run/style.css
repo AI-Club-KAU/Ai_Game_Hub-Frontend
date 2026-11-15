@@ -1,0 +1,537 @@
+@font-face {
+    font-family: "Tajawal";
+    src: url("assets/fonts/Tajawal-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Tajawal";
+    src: url("assets/fonts/Tajawal-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Tajawal";
+    src: url("assets/fonts/Tajawal-ExtraBold.ttf") format("truetype");
+    font-weight: 800;
+    font-display: swap;
+}
+
+:root {
+    --bg: #120F2A;
+    --surface: #2D2860;
+    --text: #F2F0FF;
+    --muted: #B4AED6;
+    --green: #4BE36B;
+    --purple: #6A47E0;
+    --purple-light: #A08BFF;
+    --gold: #F2C14E;
+    --red: #FF5A5A;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Tajawal", "Segoe UI", Tahoma, Arial, sans-serif;
+    line-height: 1.6;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+/* ===== Screens ===== */
+
+.screen {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+}
+
+/* ===== Start screen ===== */
+
+.eyebrow {
+    color: var(--green);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+.game-title {
+    color: var(--green);
+    font-size: clamp(2.5rem, 10vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    text-shadow: 0 0 20px rgba(75, 227, 107, 0.5);
+}
+
+.game-subtitle {
+    color: var(--muted);
+    max-width: 420px;
+}
+
+.instructions {
+    list-style: none;
+    width: 100%;
+    max-width: 420px;
+    padding: 16px 20px;
+    border-radius: 14px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ===== Buttons ===== */
+
+.game-button {
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--purple);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 36px;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(106, 71, 224, 0.6);
+    transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.quiz-option:hover {
+    border-color: var(--purple-light);
+}
+
+.game-button:active {
+    transform: scale(0.96);
+}
+
+.game-button:focus-visible {
+    outline: 3px solid var(--green);
+    outline-offset: 3px;
+}
+
+/* ===== Keyboard keys ===== */
+
+.keys {
+    display: inline-flex;
+    gap: 4px;
+    vertical-align: middle;
+}
+
+kbd {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-width: 28px;
+    padding: 2px 6px;
+    text-align: center;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--purple-light);
+    border-bottom-width: 3px;
+    border-radius: 6px;
+}
+
+/* ===== Game screen ===== */
+
+.game-container {
+    position: fixed;
+    inset: 0;
+    margin: 0 auto;
+    max-width: calc(100vh * 9 / 16);
+    overflow: hidden;
+    background: var(--bg);
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.game-container canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    touch-action: none;
+}
+
+/* ===== HUD ===== */
+
+.hud {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.hud-item {
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: rgba(45, 40, 96, 0.85);
+    border: 1px solid rgba(160, 139, 255, 0.3);
+}
+
+#score {
+    color: var(--gold);
+}
+
+.hud-button {
+    padding: 6px 12px;
+    font-size: 1rem;
+    box-shadow: none;
+}
+
+.hud-actions {
+    display: flex;
+    gap: 6px;
+    margin-inline-start: auto;
+}
+
+/* ===== Progress bars ===== */
+
+.progress-panel {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+    padding: 0 12px;
+}
+
+.progress-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "label percent"
+        "bar bar";
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(45, 40, 96, 0.85);
+    border: 1px solid rgba(160, 139, 255, 0.3);
+}
+
+.progress-label {
+    grid-area: label;
+    color: var(--muted);
+}
+
+.progress-percent {
+    grid-area: percent;
+    color: var(--green);
+}
+
+.progress-bar {
+    grid-area: bar;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    transition: width 0.3s;
+}
+
+/* ===== Overlays ===== */
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    padding: 24px;
+    overflow-y: auto;
+    touch-action: pan-y;
+    background: rgba(18, 15, 42, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.overlay-box,
+.quiz-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 28px 24px;
+    text-align: center;
+    border-radius: 18px;
+    margin: auto;
+    background: var(--surface);
+    border: 1px solid rgba(160, 139, 255, 0.4);
+    box-shadow: 0 0 40px rgba(106, 71, 224, 0.35);
+}
+
+.overlay-box p {
+    color: var(--muted);
+}
+
+/* ===== Quiz ===== */
+
+.quiz-tag {
+    color: var(--green);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+#question-text {
+    font-size: 1.25rem;
+    line-height: 1.5;
+}
+
+#quiz-options {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quiz-option {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid rgba(160, 139, 255, 0.4);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.quiz-option:hover {
+    border-color: var(--purple-light);
+}
+
+.quiz-option:disabled {
+    cursor: default;
+}
+
+.quiz-option.is-correct {
+    background: rgba(75, 227, 107, 0.15);
+    border-color: var(--green);
+}
+
+.quiz-option.is-wrong {
+    background: rgba(255, 90, 90, 0.15);
+    border-color: var(--red);
+}
+
+.quiz-feedback {
+    min-height: 1.6em;
+    font-weight: 700;
+    color: var(--green);
+}
+
+.quiz-feedback.is-wrong {
+    color: var(--red);
+}
+
+/* ===== End screen ===== */
+
+#end-message {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+}
+
+.final-score-box {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+#final-score {
+    font-size: clamp(3.5rem, 16vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--gold);
+    text-shadow: 0 0 24px rgba(242, 193, 78, 0.5);
+}
+
+.score-max {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.score-breakdown {
+    width: 100%;
+    max-width: 420px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    background: var(--surface);
+}
+
+.breakdown-item>span {
+    color: var(--green);
+}
+
+.stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 16px;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* ===== Small screens ===== */
+
+@media (max-width: 480px) {
+    .hud {
+        gap: 6px;
+        padding: 8px;
+    }
+
+    .hud-item {
+        padding: 3px 8px;
+        font-size: 0.8rem;
+    }
+
+    .progress-panel {
+        gap: 6px;
+        padding: 0 8px;
+    }
+
+    .progress-container {
+        padding: 5px 8px;
+        font-size: 0.7rem;
+    }
+
+    .game-button {
+        padding: 12px 28px;
+    }
+
+    .hud-button {
+        padding: 4px 10px;
+        font-size: 0.9rem;
+        min-width: 38px;
+        min-height: 38px;
+    }
+
+      .quiz-container {
+    padding: 20px 16px;
+    gap: 10px;
+  }
+
+  #question-text {
+    font-size: 1.05rem;
+  }
+
+  .quiz-option {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ===== Reduced motion ===== */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+    }
+}
+
+/* ===== Secondary button ===== */
+
+.secondary-button {
+    background: transparent;
+    border: 1px solid var(--purple-light);
+    box-shadow: none;
+}
+
+.end-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* ===== Hover (mouse only) ===== */
+
+@media (hover: hover) {
+    .game-button:hover {
+        background: var(--purple-light);
+        box-shadow: 0 0 28px rgba(160, 139, 255, 0.8);
+    }
+
+    .secondary-button:hover {
+        background: rgba(160, 139, 255, 0.15);
+        box-shadow: none;
+    }
+
+    .quiz-option:hover {
+        border-color: var(--purple-light);
+    }
+}
+
+/* ===== Device hints ===== */
+
+@media (pointer: coarse) {
+    .hint-desktop {
+        display: none;
+    }
+}
+
+@media (pointer: fine) {
+    .hint-mobile {
+        display: none;
+    }
+}
+
+/* ===== Touch ===== */
+
+button {
+    touch-action: manipulation;
+}
