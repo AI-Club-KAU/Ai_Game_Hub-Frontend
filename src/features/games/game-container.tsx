@@ -16,7 +16,7 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
   const frame = useRef<HTMLIFrameElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const loaded = useRef<() => void>(() => {});
-  const asset = getGameAsset(attempt.gameId);
+  const asset = getGameAsset(attempt.gameId, isMock);
   const [revision, setRevision] = useState(0);
   const [source, setSource] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -24,7 +24,7 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
   useEffect(() => { heading.current?.focus(); }, []);
   useEffect(() => {
     if (finished) return;
-    const currentAsset = getGameAsset(attempt.gameId);
+    const currentAsset = getGameAsset(attempt.gameId, isMock);
     if (!currentAsset || !canLaunchGame(attempt.gameId, isMock)) { setSource(null); setState("error"); return; }
     const abort = new AbortController();
     let cancelled = false;
@@ -35,7 +35,7 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
     setSource(null); setState("loading");
     const timer = setTimeout(() => { if (!cancelled) { setState("error"); setSource(null); abort.abort(); } }, 12000);
     loaded.current = () => {
-      if (cancelled || currentAsset.readiness !== "load" || !isMock || channel) return;
+      if (cancelled || currentAsset.game !== "escape-exe" || channel) return;
       activeWindow = frame.current?.contentWindow ?? null;
       if (!activeWindow) return;
       channel = new MessageChannel();
@@ -48,8 +48,8 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
     };
     function receive(event: MessageEvent) {
       if (cancelled || accepted.current) return;
-      if (currentAsset?.readiness === "load") {
-        if (!isMock || attempt.gameId !== "mock" || !ready || event.source !== activeWindow ||
+      if (currentAsset?.game === "escape-exe") {
+        if (!ready || event.source !== activeWindow ||
             event.source !== frame.current?.contentWindow || event.origin !== "null") return;
         const score = escapeExeScore(event.data, nonce);
         if (score === null) return;
@@ -82,14 +82,14 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
   }, [attempt.id, attempt.gameId, revision, finished]);
   if (finished && isMock) return <ResultScreen request={{ attemptId: attempt.id, score: 80 }} onComplete={onComplete} />;
   return <main className="game-mode">
-    <header className="game-mode-header"><div><Gamepad2 /><span><small>وضع اللعب · عرض تجريبي</small><h1 ref={heading} tabIndex={-1}>{attempt.gameTitle}</h1></span></div><Button disabled={!!escapeResult} variant="outline" onClick={() => { if (!accepted.current) setHelp(value => !value); }} aria-expanded={help}><HelpCircle />طلب مساعدة</Button></header>
+    <header className="game-mode-header"><div><Gamepad2 /><span><small>وضع اللعب · {isMock ? "عرض تجريبي" : "متصل بالخدمة"}</small><h1 ref={heading} tabIndex={-1}>{attempt.gameTitle}</h1></span></div><Button disabled={!!escapeResult} variant="outline" onClick={() => { if (!accepted.current) setHelp(value => !value); }} aria-expanded={help}><HelpCircle />طلب مساعدة</Button></header>
     {help && <section className="game-help" role="region" aria-label="مساعدة عضو النادي"><h2>أعد الجهاز إلى عضو النادي</h2><p>العودة للبوث لا تنهي المحاولة ولا تسجّل نتيجة. يمكن لعضو النادي استئناف نفس المحاولة.</p><Button onClick={onReturn}>العودة إلى شاشة الموظف</Button></section>}
     {isMock && asset?.readiness === "load" && !escapeResult && <label>استجابة خدمة الحفظ قبل النهاية<select aria-label="استجابة خدمة الحفظ قبل النهاية" defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label>}
     <div className="game-viewport" aria-busy={state === "loading"}>
       {state === "loading" && <p className="game-loading" role="status"><LoaderCircle className="animate-spin" />جارٍ تجهيز مساحة اللعب…</p>}
-      {state === "error" && <div className="game-load-error" role="alert"><h2>تعذّر تحميل صفحة اللعبة</h2><p>المحاولة الحالية محفوظة في الذاكرة التجريبية. أعد تحميل الصفحة داخل الحاوية دون طلب بدء جديد.</p><Button onClick={() => setRevision(value => value + 1)}><RefreshCw />إعادة تحميل الحاوية</Button></div>}
+      {state === "error" && <div className="game-load-error" role="alert"><h2>تعذّر تحميل صفحة اللعبة</h2><p>أعد تحميل اللعبة داخل الحاوية بنفس المحاولة، دون طلب بدء جديد.</p><Button onClick={() => setRevision(value => value + 1)}><RefreshCw />إعادة تحميل الحاوية</Button></div>}
       {source && <iframe key={`${attempt.id}:${revision}`} ref={frame} inert={!!escapeResult} tabIndex={escapeResult ? -1 : undefined} title="حاوية اللعبة" src={source} onLoad={() => loaded.current()} sandbox="allow-scripts" referrerPolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'" className={state === "ready" ? "game-frame" : "game-frame game-frame-pending"} />}
       {escapeResult && <div className="game-interaction-shield" aria-hidden="true" />}
-    </div>{escapeResult && isMock && <ResultScreen embedded request={escapeResult} onComplete={onComplete} />}{isMock && asset?.readiness === "container-check-v0" && <section className="result-demo"><details><summary>اختبار انتهاء المحاولة وحفظ النتيجة</summary><p>أداة عرض مؤقتة لعضو النادي؛ ليست نتيجة من لعبة حقيقية.</p><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label><Button disabled={state !== "ready"} onClick={() => setFinished(true)}>إنهاء تجريبي بنتيجة 80</Button></details></section>}<footer className="game-mode-footer"><span role="status">{state === "ready" ? (asset?.readiness === "load" ? "تم تحميل صفحة اللعبة" : "الحاوية جاهزة") : state === "error" ? "بانتظار استعادة التحميل" : "جارٍ التحميل"}</span><span>{asset?.readiness === "load" ? "ESCAPE.EXE · نتائج محفوظة في Mock فقط" : "صفحة اختبار للحاوية فقط · لا توجد نقاط أو نتائج محفوظة"}</span></footer>
+    </div>{escapeResult && asset?.game === "escape-exe" && <ResultScreen embedded request={escapeResult} onComplete={onComplete} />}{isMock && asset?.readiness === "container-check-v0" && <section className="result-demo"><details><summary>اختبار انتهاء المحاولة وحفظ النتيجة</summary><p>أداة عرض مؤقتة لعضو النادي؛ ليست نتيجة من لعبة حقيقية.</p><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label><Button disabled={state !== "ready"} onClick={() => setFinished(true)}>إنهاء تجريبي بنتيجة 80</Button></details></section>}<footer className="game-mode-footer"><span role="status">{state === "ready" ? (asset?.readiness === "load" ? "تم تحميل صفحة اللعبة" : "الحاوية جاهزة") : state === "error" ? "بانتظار استعادة التحميل" : "جارٍ التحميل"}</span><span>{asset?.game === "escape-exe" ? (isMock ? "ESCAPE.EXE · نتائج محفوظة في Mock فقط" : "ESCAPE.EXE · حفظ النتيجة عبر الخدمة") : "صفحة اختبار للحاوية فقط · لا توجد نقاط أو نتائج محفوظة"}</span></footer>
   </main>;
 }

@@ -20,16 +20,22 @@ async function prepare(page: Page, waitForLoad = true) {
   if (waitForLoad) await expect(page.locator(".game-mode-footer")).toContainText("تم تحميل صفحة اللعبة");
 }
 
-test("asset registry keeps ESCAPE and QA mock-only and rejects unknown IDs", () => {
-  expect(getGameAsset("mock")).toEqual({ entry: "/games/escape-exe/index.html", readiness: "load" });
+test("asset registry separates approved Live ESCAPE from the unchanged Mock catalog", () => {
+  expect(getGameAsset("mock", true)).toEqual({ game: "escape-exe", entry: "/games/escape-exe/index.html", readiness: "load" });
+  expect(getGameAsset("1", false)).toEqual(getGameAsset("mock", true));
+  expect(canLaunchGame("1", false)).toBe(true);
   for (const id of ["mock", "2", "3", "4", "5"]) {
     expect(canLaunchGame(id, true)).toBe(true);
     expect(canLaunchGame(id, false)).toBe(false);
+    expect(getGameAsset(id, false)).toBeNull();
   }
-  expect(getGameAsset("unknown")).toBeNull();
-  expect(getGameAsset("1")).toBeNull();
+  expect(getGameAsset("unknown", true)).toBeNull();
+  expect(getGameAsset("1", true)).toBeNull();
   expect(canLaunchGame("1", true)).toBe(false);
-  expect(canLaunchGame("unknown", true)).toBe(false);
+  for (const id of ["unknown", "01", "1.0", "1 ", "0", "6", ""]) {
+    expect(canLaunchGame(id, true)).toBe(false);
+    expect(canLaunchGame(id, false)).toBe(false);
+  }
 });
 
 test("mock scenario restores the exact unfinished attempt without another Start", async () => {

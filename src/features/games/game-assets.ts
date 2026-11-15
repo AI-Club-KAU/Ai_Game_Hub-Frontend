@@ -1,15 +1,18 @@
 import { findMockGame } from "@/services/mock-game-catalog";
 
-type GameAsset = { entry: string; readiness: "container-check-v0" | "load" };
+type GameAsset = { game: "escape-exe" | "qa"; entry: string; readiness: "container-check-v0" | "load" };
+const escapeExe: GameAsset = Object.freeze({ game: "escape-exe", entry: "/games/escape-exe/index.html", readiness: "load" });
+const qa: GameAsset = Object.freeze({ game: "qa", entry: "/games/container-check/index.html", readiness: "container-check-v0" });
 
 /** `mock` is a local game ID, never a numeric Backend game mapping. */
-export function getGameAsset(gameId: string): GameAsset | null {
+export function getGameAsset(gameId: string, mockMode: boolean): GameAsset | null {
+  // Live approvals are explicit. Numeric IDs alone never enable a placeholder.
+  if (!mockMode) return gameId === "1" ? escapeExe : null;
   if (!findMockGame(gameId)) return null;
-  return gameId === "mock" ? { entry: "/games/escape-exe/index.html", readiness: "load" }
-    : { entry: "/games/container-check/index.html", readiness: "container-check-v0" };
+  return gameId === "mock" ? escapeExe : qa;
 }
 
-/** No local asset is approved for live attempts in Phase 1. */
+/** Only ESCAPE.EXE (Backend ID 1) is approved for Live. */
 export function canLaunchGame(gameId: string, mockMode: boolean) {
-  return mockMode && getGameAsset(gameId) !== null;
+  return getGameAsset(gameId, mockMode) !== null;
 }

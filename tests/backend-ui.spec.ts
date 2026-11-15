@@ -32,7 +32,7 @@ test("live UI retrieves participant and eligibility but cannot consume attempts 
  await page.locator("#participant-id").fill("00123");
  await page.getByRole("button",{name:"استرجاع المشارك",exact:true}).click();
  await expect(page.getByText("مشارك فعلي للاختبار",{exact:true})).toBeVisible();
- await page.getByRole("radio",{name:/لعبة 1/}).check();
+ await page.getByRole("radio",{name:/لعبة 2/}).check();
  await page.getByRole("button",{name:"تأكيد اختيار اللعبة"}).click();
  await expect(page.getByRole("button",{name:"ابدأ اللعب",exact:true})).toBeDisabled();
  expect(writes).toEqual(["/students/login"]);
