@@ -30,8 +30,10 @@ export function createBackendServices(base: string, transport: typeof fetch = fe
     if (attempt.student_id !== studentId || attempt.game_id !== gameId ||
         (known && (known.studentId !== studentId || known.gameId !== gameId))) throw new BackendValidationError();
   }
-  function remember(student: Student): Participant {
-    if (!student || typeof student.id !== "string" || typeof student.student_number !== "string" || typeof student.full_name !== "string") throw new Error("Invalid student response");
+  function remember(student: Student, requestedIdentifier: string): Participant {
+    if (!student || typeof student.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(student.id) ||
+        typeof student.student_number !== "string" || !student.student_number || student.student_number !== requestedIdentifier ||
+        typeof student.full_name !== "string" || !student.full_name.trim()) throw new BackendValidationError();
     participants.set(student.student_number, student);
     return { id: student.id, identifier: student.student_number, fullName: student.full_name };
   }
@@ -87,7 +89,7 @@ export function createBackendServices(base: string, transport: typeof fetch = fe
   }};
   const participant: ParticipantService = {
     async register(input) {
-      try { return {status:"success",participant:remember((await request<{student:Student}>("/students/register",{full_name:input.fullName,student_number:input.identifier})).student)}; }
+      try { return {status:"success",participant:remember((await request<{student:Student}>("/students/register",{full_name:input.fullName,student_number:input.identifier})).student,input.identifier)}; }
       catch(error) {
         if(error instanceof ApiError && error.code === "student_number_exists") return {status:"duplicate",message:"هذا الرقم مسجّل بالفعل. استخدم مشارك سابق لاسترجاع بياناته."};
         if(error instanceof ApiError && error.code === "invalid_input") return {status:"invalid",message:"راجع الاسم والرقم التعريفي."};
@@ -95,7 +97,7 @@ export function createBackendServices(base: string, transport: typeof fetch = fe
       }
     },
     async find(identifier) {
-      try { return {status:"success",participant:remember((await request<{student:Student}>("/students/login",{student_number:identifier})).student)}; }
+      try { return {status:"success",participant:remember((await request<{student:Student}>("/students/login",{student_number:identifier})).student,identifier)}; }
       catch(error) {
         if(error instanceof ApiError && error.code === "student_not_found") return {status:"not-found",message:"لم نعثر على مشارك بهذا الرقم."};
         throw error;

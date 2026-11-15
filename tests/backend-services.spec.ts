@@ -1,5 +1,5 @@
 
-import {test,expect} from "@playwright/test";
+import {test,expect} from "./fixtures";
 import {BackendValidationError,createBackendServices} from "../src/services/backend-services";
 import {platformSession} from "../src/services/platform-session";
 const sid="00000000-0000-0000-0000-000000000001";
@@ -38,6 +38,27 @@ async function start(f:ReturnType<typeof fixture>,gameId="1"){
  return f.api.attempts.start({requestId:"local-only",participantIdentifier:"00123",gameId,day:"2026-11-12",section:null});
 }
 test.afterEach(()=>platformSession.clear());
+test("participant registration and login require an exact matching identity before caching", async () => {
+ const valid = {id:sid,student_number:"00123",full_name:"Test"};
+ for (const action of ["register", "find"] as const) {
+  for (const student of [valid, {...valid,student_number:"123"}, {...valid,student_number:"٠٠١٢٣"}, {...valid,student_number:" 00123"},
+    {...valid,student_number:undefined}, {...valid,student_number:123}, {...valid,id:"not-a-uuid"}, {...valid,id:undefined},
+    {...valid,full_name:null}, {...valid,full_name:""}, undefined, null]) {
+   const calls:string[]=[];
+   const api=createBackendServices("https://backend.invalid",async input=>{calls.push(String(input));return new Response(JSON.stringify({student}));});
+   platformSession.accept("test-token",3600);
+   const operation=action==="register"?api.participant.register({identifier:"00123",fullName:"Test"}):api.participant.find("00123");
+   if (student===valid) {
+    expect(await operation).toEqual({status:"success",participant:{id:sid,identifier:"00123",fullName:"Test"}});
+   } else {
+    await expect(operation).rejects.toThrow(BackendValidationError);
+    await expect(api.eligibility.load("00123")).rejects.toThrow("Retrieve participant first");
+    if(typeof student?.student_number === "string") await expect(api.eligibility.load(student.student_number)).rejects.toThrow("Retrieve participant first");
+    expect(calls).toHaveLength(1);
+   }
+  }
+ }
+});
 test("real adapter preserves UUID/leading zeros, sends exact wire fields and uses bearer only",async()=>{
  const f=fixture();const result=await start(f);
  expect(result.status).toBe("started");

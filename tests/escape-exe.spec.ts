@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./fixtures";
 import { canLaunchGame, getGameAsset } from "../src/features/games/game-assets";
 import { mockAttemptService, attemptDemo } from "../src/services/mock-attempt-service";
 import { eligibilityDemo } from "../src/services/mock-eligibility-service";

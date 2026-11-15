@@ -1,5 +1,5 @@
 
-import {test,expect} from "@playwright/test";
+import {test,expect} from "./fixtures";
 import {mockResultService as service,resultDemo,savedResults} from "../src/services/mock-result-service";
 import {activeAttempts} from "../src/services/mock-attempt-store";
 test("concurrent saves deduplicate, conflicting scores reject, invalid scores preserve attempt",async()=>{

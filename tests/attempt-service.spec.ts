@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { mockAttemptService, attemptDemo } from "../src/services/mock-attempt-service";
 import { eligibilityDemo } from "../src/services/mock-eligibility-service";
 import { activeAttempts } from "../src/services/mock-attempt-store";

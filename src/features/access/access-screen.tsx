@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowUpLeft, Check, CheckCircle2, ChevronLeft, Eye, EyeOff, Fingerprint, Gamepad2, LoaderCircle, LockKeyhole, ShieldCheck, Sparkles, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { accessService, isMock, clearBackendSession } from "@/services";
+import { accessService, isMock, configurationError, clearBackendSession } from "@/services";
 import { AccessConnectionError } from "@/services/access-service";
 
 import { ParticipantScreen } from "@/features/participants/participant-screen";
@@ -41,6 +41,7 @@ export function AccessScreen() {
   }
   function reset() { clearBackendSession(); setBooth(false); returning.current = true; setCode(""); setVisible(false); setState({ kind: "idle" }); }
   const loading = state.kind === "loading";
+  if (configurationError) return <main className="access-shell"><section className="entry-card" role="alert"><h1>تعذّر إعداد الاتصال</h1><p>{configurationError.message}</p></section></main>;
   if (booth) return <ParticipantScreen onLock={reset} />;
   return (
     <main className="access-shell">

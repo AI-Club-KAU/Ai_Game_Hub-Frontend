@@ -1,7 +1,8 @@
-import { test, expect, type Page, type Frame } from "@playwright/test";
+import { TEST_API_BASE_URL } from "./test-environment";
+import { test, expect, type Page, type Frame } from "./fixtures";
 import { canLaunchGame, getGameAsset } from "../src/features/games/game-assets";
 
-const apiUrl = "https://wjhbdtznydxozorfanrx.supabase.co/functions/v1";
+const apiUrl = TEST_API_BASE_URL;
 const studentId = "00000000-0000-0000-0000-000000000001";
 const attemptId = "10000000-0000-0000-0000-000000000001";
 type Attempt = { id: string; student_id: string; game_id: number; status: "started" | "completed"; score: number | null; play_date: string; started_at: string };

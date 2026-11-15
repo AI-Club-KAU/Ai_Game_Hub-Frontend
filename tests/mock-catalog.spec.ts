@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./fixtures";
 import { MOCK_GAME_CATALOG, MOCK_MAX_POINTS, MockHistoryConflict } from "../src/services/mock-game-catalog";
 import { eligibilityDemo, mockEligibilityService, type DemoHistory } from "../src/services/mock-eligibility-service";
 import { activeAttempts } from "../src/services/mock-attempt-store";

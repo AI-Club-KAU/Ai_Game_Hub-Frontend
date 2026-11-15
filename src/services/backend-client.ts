@@ -1,12 +1,11 @@
 
 import { platformSession } from "./platform-session";
+import { validateApiBaseUrl } from "./api-configuration";
 export class ApiError extends Error {
   constructor(public status: number, public code: string) { super("تعذّر إكمال الطلب."); }
 }
 export function createApiClient(base: string, transport: typeof fetch = fetch) {
-  const url = new URL(base);
-  if (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost","127.0.0.1"].includes(url.hostname))) throw new Error("Use HTTPS or local test API");
-  if (url.username || url.password || url.search || url.hash) throw new Error("Invalid API base URL");
+  validateApiBaseUrl(base);
   return async function request<T>(path: string, body?: unknown, protectedRoute = true): Promise<T> {
     for (let pass = 0; pass < 2; pass++) {
       if (protectedRoute && !platformSession.getToken()) await platformSession.renew();

@@ -1,9 +1,10 @@
+import { TEST_API_BASE_URL } from "./test-environment";
 
-import {test,expect,type Page} from "@playwright/test";
+import {test,expect,type Page} from "./fixtures";
 const sid="00000000-0000-0000-0000-000000000001";
 async function mockApi(page:Page,expire=false,played=false,invalidProgress=false){
  const writes:string[]=[];let leaderboardCalls=0;
- await page.route("https://wjhbdtznydxozorfanrx.supabase.co/functions/v1/**",async route=>{
+ await page.route(TEST_API_BASE_URL + "/**",async route=>{
   const request=route.request();const path=new URL(request.url()).pathname.split("/functions/v1")[1];
   const respond=(body:unknown,status=200)=>route.fulfill({status,contentType:"application/json",body:JSON.stringify(body)});
   if(request.method()==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"authorization,content-type","access-control-allow-methods":"GET,POST,OPTIONS"}});
@@ -16,7 +17,7 @@ async function mockApi(page:Page,expire=false,played=false,invalidProgress=false
    if(expire&&leaderboardCalls++===0)return respond({error:{code:"invalid_platform_token"}},401);
    return respond({leaderboard:[{full_name:"اسم العرض",total_score:80,games_completed:1}]});
   }
-  return respond({error:{code:"not_found"}},404);
+  await route.abort("blockedbyclient"); throw new Error("Unmocked API route");
  });
  return writes;
 }

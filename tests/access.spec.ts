@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test("Arabic RTL access form validates empty and rejected codes", async ({ page }) => {
   const errors: string[] = [];

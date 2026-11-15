@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./fixtures";
 import { registerResultUnloadWarning } from "../src/features/games/result-unload-warning";
 
 test("warning cleanup removes the exact listener, including repeated mount/unmount cycles", () => {

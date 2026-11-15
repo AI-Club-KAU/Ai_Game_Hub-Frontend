@@ -6,7 +6,7 @@
 
 ## الحالة الحالية
 
-تمت إضافة محولات API للباك إند الموجود في devweek-backend. الوضع الافتراضي live، ويستخدم وظائف Supabase الموثقة دون SDK أو service-role key في الواجهة.
+تمت إضافة محولات API للباك إند الموجود في devweek-backend. اختيار الوضع صريح دون افتراضي Live، ويستخدم وضع Live وظائف Supabase الموثقة دون SDK أو service-role key في الواجهة.
 
 - الدخول يحتاج رمز البوث الحقيقي الذي يُدخل في الشاشة؛ demo يعمل فقط في وضع Mock.
 - تُحفظ جلسة الساعة في الذاكرة، وعند انتهاء صلاحيتها تظهر شاشة تجديد تحتفظ بسياق الطلب والمحاولة.
@@ -68,7 +68,7 @@ pnpm typecheck
 pnpm build
 ~~~
 
-بديل Windows: شغّل scripts/run.ps1 مع test أو typecheck أو build. اختبارات Playwright تستخدم Chrome المثبت، وتشغّل خادم التطوير تلقائيًا إذا لم يكن يعمل. لقطات المراجعة المحلية داخل tmp/qa/.
+بديل Windows: شغّل scripts/run.ps1 مع test أو typecheck أو build. اختبارات Playwright تستخدم Chrome المثبت، وتشغّل خادم اختبار مستقلًا ولا تعيد استخدام خادم قائم. لقطات المراجعة المحلية داخل tmp/qa/.
 
 ## الملفات الرئيسية
 
@@ -164,19 +164,48 @@ Next.js وTypeScript وTailwind CSS ومكونات shadcn/ui. الألوان #54
 
 ## إعداد وضع الاتصال والاختبارات
 
-القيم العامة موجودة في .env.example. يمكن نسخها إلى .env.local وتغيير عنوان API أو NEXT_PUBLIC_API_MODE إلى mock. لا تضف SUPABASE_SERVICE_ROLE_KEY أو PLATFORM_ACCESS_CODE إلى الواجهة.
+- يجب تحديد NEXT_PUBLIC_API_MODE صراحةً: mock للمحاكاة أو live للخدمة. القيمة المفقودة أو الفارغة أو غير المعروفة تعرض خطأ إعداد وتمنع أي طلب Backend؛ لا يوجد وضع Live افتراضي.
+- عند اختيار live يجب تحديد NEXT_PUBLIC_API_BASE_URL صراحةً لعنوان API المعتمد للبيئة المطلوبة. لا يوجد عنوان Production أو Staging افتراضي. اختيار live لا يثبت سلامة الاتصال بالخدمة.
+- يقبل العنوان HTTPS، أو HTTP على loopback للاختبار المحلي فقط. تُرفض العناوين النسبية وبيانات المستخدم وكلمات المرور وquery وfragment والصيغ التي تتطلب تصحيحًا ضمنيًا. لا تظهر قيمة الإعداد في رسالة الخطأ.
+- الإعداد الصالح لا يثبت أن الوجهة Staging؛ تؤكد Mada عنوان المشروع وعزل قاعدة بياناته والدوال والمهاجرات وCORS قبل أي اتصال فعلي.
+- NEXT_PUBLIC_* تُدمج أثناء البناء. ابنِ Mock وStaging بصورة منفصلة؛ تغيير Runtime Environment أو إعادة تشغيل حزمة قديمة لا يغيّر وجهتها. أعد تشغيل خادم التطوير بعد تغيير الإعدادات.
+- ملفات .env المحلية وإعدادات البناء الخارجية قد تغير الوجهة؛ راجع أولوية إعدادات Next.js. ملف .env.staging لا يُحمّل تلقائيًا كوضع مستقل، ولا تستخدم NODE_ENV=staging.
+- لا تضع رمز البوث أو signing secret أو Service Role في أي متغير عام. يُدخل رمز الوصول في الشاشة فقط.
 
-الوضع الافتراضي live: أوامر typecheck وbuild وtest في scripts/run.ps1؛ مجموعة test الافتراضية تختبر عقد API والواجهة باعتراض الشبكة دون كتابة على Supabase.
-
-لإعادة اختبارات العرض السابقة في PowerShell، أوقف الخادم ثم:
+مثال PowerShell لبناء Mock:
 
 ~~~powershell
 $env:NEXT_PUBLIC_API_MODE = 'mock'
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 build
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run.ps1 start
+pnpm build
 ~~~
 
-ومن طرفية ثانية بالقيمة نفسها شغّل test. للرجوع إلى live أوقف الخادم، واضبط NEXT_PUBLIC_API_MODE=live وأعد build ثم start. متغيرات NEXT_PUBLIC تُثبت عند البناء؛ لا يكفي تغييرها مع تشغيل بناء قديم.
+لبناء Staging لاحقًا بعد اعتماد البيئة: اضبط NEXT_PUBLIC_API_MODE=live وNEXT_PUBLIC_API_BASE_URL إلى عنوان Edge Functions الذي تؤكده Mada ثم نفّذ build في مساحة منفصلة. لا تستخدم حزمة Mock نفسها ولا تنقل حزمة Production القديمة مع تغيير runtime فقط.
+
+### اختبارات محلية بلا خدمات حقيقية
+
+~~~powershell
+$env:NEXT_PUBLIC_API_MODE = 'mock'
+pnpm test
+$env:NEXT_PUBLIC_API_MODE = 'live'
+pnpm test
+~~~
+
+Playwright يفرض وضعًا صريحًا ويشغّل خادمًا محليًا جديدًا: 3101 لـMock و3102 لـLive، دون إعادة استخدام خادم قائم. عنوان API الاختباري وهمي على backend.invalid؛ لا يُستخدم عنوان المشغّل الحقيقي حتى لو كان موجودًا في البيئة.
+
+الخادم يعمل على نسخة مؤقتة داخل tmp/ ولا ينسخ .env أو incoming-games أو مخرجات البناء. هذا يحمي next-env.d.ts الأصلي من تحديثات Next.js. عمليات Node محمية بحاجز loopback، والمتصفح يستخدم proxy محليًا لا يمرّر الاتصالات الخارجية، مع حظر Service Workers واعتراض الشبكة وWebSocket. الطلب غير المحاكى يُحظر ويُفشل الاختبار. تستخدم الحالات tests/fixtures بدل استيراد test مباشرة من @playwright/test، وللسياقات الإضافية تستخدم newIsolatedContext.
+
+اختبارات Live تستخدم عنوان API الاختباري المركزي في tests/test-environment.ts، ولا تعتمد على hostname خاص بـProduction. فحوص العزل تتحقق كذلك من طلب API غير محاكى ومحاولة تجاوز الاعتراض. هذه اختبارات عقود وواجهة محلية، وليست اختبار تكامل Supabase.
+
+لتحقق بناء معزول وآمن دون تعديل ملفات Next المولدة في الجذر:
+
+~~~powershell
+node scripts/run-isolated-next.mjs build mock
+node scripts/run-isolated-next.mjs build live
+~~~
+
+كلاهما يستخدم إعدادًا وهميًا وحاجز شبكة Node؛ مخرجاتهما داخل tmp/ وليستا حزمتين للنشر إلى Staging.
+
+تسجيل المشارك واسترجاعه يرفضان student_number المرتجع إذا لم يطابق الرقم المطلوب حرفيًا قبل تحديث الذاكرة؛ لا تُحذف أصفار ولا تُوحّد هويات مختلفة داخل المحول. يبقى تطبيع إدخال المستخدم الحالي في واجهة النموذج كما هو.
 
 ملفات الربط الأساسية: backend-client.ts وbackend-services.ts وplatform-session.ts وruntime-config.ts داخل src/services، وsession-renewal.tsx داخل src/features/access.
 

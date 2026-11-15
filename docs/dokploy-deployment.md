@@ -12,10 +12,10 @@
 
 ~~~dotenv
 NEXT_PUBLIC_API_MODE=live
-NEXT_PUBLIC_API_BASE_URL=https://wjhbdtznydxozorfanrx.supabase.co/functions/v1
+NEXT_PUBLIC_API_BASE_URL=<approved-environment-api-base>
 ~~~
 
-القيم نفسها موجودة افتراضيًا في Dockerfile. متغيرات NEXT_PUBLIC عامة وتُثبت أثناء build. تغيير Runtime Environment وحده لا يغيّر عنوان API في المتصفح؛ أعد البناء والنشر عند تغييرها.
+لا توجد قيم Live افتراضية في Dockerfile؛ استبدل placeholder بعنوان البيئة المعتمد صراحةً، ولا تستخدمه كقيمة فعلية. متغيرات NEXT_PUBLIC عامة وتُثبت أثناء build. تغيير Runtime Environment وحده لا يغيّر عنوان API في المتصفح؛ أعد البناء والنشر عند تغييرها.
 
 لا تحتاج متغيرات Runtime إضافية؛ الصورة تضبط NODE_ENV=production وPORT=3000 وHOSTNAME=0.0.0.0. لا تضع SUPABASE_SERVICE_ROLE_KEY أو PLATFORM_ACCESS_CODE أو signing secret في التطبيق أو build arguments. رمز البوث يُدخل في شاشة الدخول.
 
@@ -25,7 +25,7 @@ NEXT_PUBLIC_API_BASE_URL=https://wjhbdtznydxozorfanrx.supabase.co/functions/v1
 ## الاختبار عند توفر Docker
 
 ~~~sh
-docker build -t ai-club-games-hub .
+docker build --build-arg NEXT_PUBLIC_API_MODE=mock -t ai-club-games-hub .
 docker run --rm -p 3000:3000 --name ai-club-games-hub ai-club-games-hub
 ~~~
 
@@ -48,3 +48,5 @@ BUILD_STANDALONE=true إعداد داخلي في Dockerfile؛ لا تحتاج إ
 ## نتيجة التحقق المحلي
 
 نجح بناء standalone وفحص TypeScript، وتشغيل server.js على منفذ اختبار 3100؛ الصفحة وملف CSS وأصل public أعادت HTTP 200. أُوقف خادم الاختبار بعد التحقق. Docker غير مثبت على هذا الجهاز، لذلك لم تُبنَ صورة Docker أو تُختبر الحاوية محليًا؛ أول تحقق للصورة سيكون في Dokploy أو جهاز عليه Docker.
+
+لبناء Staging يلزم تمرير mode=live والعنوان المعتمد كـbuild arguments إلى بناء منفصل بعد تأكيد Mada للبيئة. عدم ضبطهما يعرض خطأ إعداد ويمنع الطلبات. مثال Docker أعلاه يبني Mock فقط؛ لا يختبر Supabase.

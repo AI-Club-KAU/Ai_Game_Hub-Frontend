@@ -1,5 +1,5 @@
 
-import {test,expect} from "@playwright/test";
+import {test,expect} from "./fixtures";
 import {mockLeaderboardService as service,leaderboardDemo} from "../src/services/mock-leaderboard-service";
 import {savedResults} from "../src/services/mock-result-service";
 test("top three aggregates saved results only, keeps equal ranks and returns no identifiers",async()=>{

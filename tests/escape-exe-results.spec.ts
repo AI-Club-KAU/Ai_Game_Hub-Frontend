@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./fixtures";
 import { readFileSync } from "node:fs";
 import { escapeExeScore } from "../src/features/games/escape-exe-result";
 
@@ -125,9 +125,9 @@ for (const mode of ["offline", "rejected", "lost-response"] as const) {
   });
 }
 
-for (const touch of [false, true]) test(`real timeout preserves animations and blocks replay with touch=${touch}`, async ({ browser }) => {
+for (const touch of [false, true]) test(`real timeout preserves animations and blocks replay with touch=${touch}`, async ({ newIsolatedContext }) => {
   test.setTimeout(60000);
-  const context = await browser.newContext({ viewport: { width: 1200, height: 1000 }, hasTouch: touch });
+  const context = await newIsolatedContext({ viewport: { width: 1200, height: 1000 }, hasTouch: touch });
   const page = await context.newPage();
   try {
     const frame = await launch(page);

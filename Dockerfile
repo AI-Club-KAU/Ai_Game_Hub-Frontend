@@ -8,8 +8,8 @@ RUN pnpm install --frozen-lockfile
 FROM dependencies AS builder
 COPY . .
 # Public browser settings are baked into the bundle by Next.js.
-ARG NEXT_PUBLIC_API_MODE=live
-ARG NEXT_PUBLIC_API_BASE_URL=https://wjhbdtznydxozorfanrx.supabase.co/functions/v1
+ARG NEXT_PUBLIC_API_MODE
+ARG NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_MODE=$NEXT_PUBLIC_API_MODE
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_TELEMETRY_DISABLED=1 BUILD_STANDALONE=true
