@@ -1,11 +1,12 @@
 
 import {test,expect} from "@playwright/test";
-import {createBackendServices} from "../src/services/backend-services";
+import {BackendValidationError,createBackendServices} from "../src/services/backend-services";
 import {platformSession} from "../src/services/platform-session";
 const sid="00000000-0000-0000-0000-000000000001";
 function fixture() {
  const calls:{path:string;body:any;auth:string|null}[]=[];
  let attempts:any[]=[]; let failFinish=false; let outage=false; let totalUnavailable=false; let conflict=false;
+ let progressPatch=(data:any):any=>data, finishPatch=(data:any):any=>data;
  const transport:typeof fetch=async (input,init)=>{
   const path=new URL(String(input)).pathname; const body=init?.body?JSON.parse(String(init.body)):undefined;
   calls.push({path,body,auth:new Headers(init?.headers).get("Authorization")});
@@ -14,7 +15,9 @@ function fixture() {
   if(path==="/students/login" || path==="/students/register")return json({student:{id:sid,student_number:"00123",full_name:"مشارك الاختبار"}});
   if(path.endsWith("/progress")) {
    if(outage)throw new Error("network");
-   return json({student_id:sid,play_date:"2026-11-12",total_score:attempts.reduce((sum,a)=>sum+(a.score??0),0),games:[1,2,3,4,5].map(id=>({id,name:"لعبة "+id,max_score:100,is_active:true,attempt:attempts.find(a=>a.game_id===id)??null,eligible_to_start:!attempts.some(a=>a.game_id===id)}))});
+   // Preserve non-JSON numeric faults too, to exercise the runtime validator directly.
+   const data=progressPatch({student_id:sid,play_date:"2026-11-12",total_score:attempts.reduce((sum,a)=>sum+(a.score??0),0),games:[1,2,3,4,5].map(id=>({id,name:"لعبة "+id,max_score:100,is_active:true,attempt:attempts.find(a=>a.game_id===id)??null,eligible_to_start:!attempts.some(a=>a.game_id===id)}))});
+   return Object.assign(json(null),{json:async()=>data});
   }
   if(path==="/attempts/start"){const a={id:"attempt-"+body.game_id,student_id:sid,game_id:body.game_id,status:"started",score:null,play_date:"2026-11-12",started_at:"2026-11-12T10:00:00Z"};attempts.push(a);return json({attempt:a},201);}
   if(path==="/attempts/finish"){
@@ -22,13 +25,13 @@ function fixture() {
    a.status="completed";a.score=body.score;
    if(failFinish)throw new Error("lost response");
    if(conflict)return json({error:{code:"attempt_already_completed"}},409);
-   return json({attempt:a,score_saved:true,total_available:!totalUnavailable,total_score:totalUnavailable?null:a.score});
+   return json(finishPatch({attempt:a,score_saved:true,total_available:!totalUnavailable,total_score:totalUnavailable?null:a.score}));
   }
   if(path==="/leaderboard")return json({leaderboard:[{full_name:"مشارك الاختبار",total_score:80,games_completed:1}]});
   throw new Error("Unexpected route");
  };
  const api=createBackendServices("https://api.test",transport);
- return {api,calls,setLost:()=>{failFinish=true;},setOutage:()=>{outage=true;},setDegraded:()=>{totalUnavailable=true;},setConflict:()=>{conflict=true;}};
+ return {api,calls,setLost:()=>{failFinish=true;},setOutage:()=>{outage=true;},setDegraded:()=>{totalUnavailable=true;},setConflict:()=>{conflict=true;},setProgress:(patch:(data:any)=>any)=>{progressPatch=patch;},setFinish:(patch:(data:any)=>any)=>{finishPatch=patch;}};
 }
 async function start(f:ReturnType<typeof fixture>,gameId="1"){
  await f.api.access.verify("operator-code");await f.api.participant.find("00123");
@@ -115,4 +118,94 @@ test("eligible_to_start remains authoritative even for an active game without a 
  expect(data.games.map(g=>g.eligible)).toEqual([false,true]);
  expect(data.games[0].reason).toContain("غير متاحة");
  expect(data.status).toBe("eligible");
+});
+
+test("progress rejects duplicate, oversized and malformed catalogs without correcting them",async()=>{
+ const f=fixture();await start(f);
+ const invalidIds=[undefined,null,"1","mock",0,-1,6,1.5,NaN,Infinity];
+ const patches=[
+  (data:any)=>({...data,games:[data.games[0],data.games[0]]}),
+  (data:any)=>({...data,games:[...data.games,data.games[0]]}),
+  ...invalidIds.map(id=>(data:any)=>({...data,games:[{...data.games[0],id}]})),
+  ...[undefined,null,"100",99,101,NaN,Infinity].map(max_score=>(data:any)=>({...data,games:[{...data.games[0],max_score}]})),
+  (data:any)=>({...data,games:[null]}),
+ ];
+ for(const patch of patches){f.setProgress(patch);await expect(f.api.eligibility.load("00123")).rejects.toThrow(BackendValidationError);}
+ f.setProgress(data=>data);
+ expect((await f.api.eligibility.load("00123")).games).toHaveLength(5);
+});
+
+test("progress validates integer totals, optional completion counts and attempt scores",async()=>{
+ const f=fixture();await start(f);
+ for(const total_score of [undefined,null,"80",-1,501,0.5,NaN,Infinity,-Infinity]){
+  f.setProgress(data=>({...data,total_score}));
+  await expect(f.api.eligibility.load("00123")).rejects.toThrow(BackendValidationError);
+ }
+ for(const games_completed of [undefined,null,"1",-1,6,0.5,NaN,Infinity,-Infinity]){
+  f.setProgress(data=>({...data,games_completed}));
+  await expect(f.api.eligibility.load("00123")).rejects.toThrow(BackendValidationError);
+ }
+ for(const score of [undefined,null,"80",-1,101,0.5,NaN,Infinity]){
+  f.setProgress(data=>({...data,games:[{...data.games[0],attempt:{...data.games[0].attempt,status:"completed",score}}]}));
+  await expect(f.api.eligibility.load("00123")).rejects.toThrow(BackendValidationError);
+ }
+ f.setProgress(data=>({...data,games:[{...data.games[0],attempt:{...data.games[0].attempt,score:80}}]}));
+ await expect(f.api.eligibility.load("00123")).rejects.toThrow(BackendValidationError);
+ for(const value of [0,5]){
+  f.setProgress(data=>({...data,total_score:value*100,games_completed:value}));
+  expect((await f.api.eligibility.load("00123")).totalScore).toBe(value*100);
+ }
+ f.setProgress(data=>data); // Existing responses without games_completed remain supported.
+ expect((await f.api.eligibility.load("00123")).totalScore).toBe(0);
+});
+
+test("invalid Start IDs are rejected before any network or session activity",async()=>{
+ const f=fixture();
+ for(const gameId of [undefined,null,"","mock","0","-1","6","1.5","NaN","Infinity","01","1.0","1e0"," 1","1 ","1\n","1\r\n","+1","١",1,1.5,NaN,Infinity]){
+  const result=await f.api.attempts.start({requestId:"invalid",participantIdentifier:"00123",gameId:gameId as string,day:3,section:null});
+  expect(result.status).toBe("rejected");
+ }
+ expect(f.calls).toEqual([]);expect(platformSession.needsRenewal()).toBe(false);
+});
+
+test("canonical Start IDs retain exactly the documented numeric wire format",async()=>{
+ const f=fixture();await f.api.access.verify("operator-code");await f.api.participant.find("00123");
+ for(const gameId of ["1","2","3","4","5"]){
+  expect((await f.api.attempts.start({requestId:gameId,participantIdentifier:"00123",gameId,day:3,section:null})).status).toBe("started");
+ }
+ expect(f.calls.filter(call=>call.path==="/attempts/start").map(call=>call.body)).toEqual([1,2,3,4,5].map(game_id=>({student_id:sid,game_id})));
+});
+
+for(const field of ["id","student_id","game_id"] as const){
+ test(`Finish rejects a mismatched ${field} and can reconcile only the original result`,async()=>{
+  const f=fixture();await start(f);
+  f.setFinish(data=>({...data,attempt:{...data.attempt,[field]:field==="game_id"?2:"other-identity"}}));
+  await expect(f.api.results.save({attemptId:"attempt-1",score:80})).rejects.toThrow(BackendValidationError);
+  const saved=await f.api.results.inspect("attempt-1");
+  expect(saved).toMatchObject({attemptId:"attempt-1",participantIdentifier:"00123",gameId:"1",score:80});
+  expect(f.calls.filter(call=>call.path==="/attempts/finish")).toHaveLength(1);
+ });
+}
+
+test("progress cannot replace an established attempt's game identity during result recovery",async()=>{
+ const f=fixture();await start(f);
+ f.setProgress(data=>({...data,games:[{...data.games[1],attempt:{...data.games[0].attempt,game_id:2,status:"completed",score:80}}]}));
+ await expect(f.api.results.inspect("attempt-1")).rejects.toThrow(BackendValidationError);
+ await expect(f.api.results.save({attemptId:"attempt-1",score:80})).rejects.toThrow(BackendValidationError);
+ expect(f.calls.filter(call=>call.path==="/attempts/finish")).toHaveLength(0);
+ f.setProgress(data=>data);
+ expect(await f.api.results.inspect("attempt-1")).toBeNull();
+ expect((await f.api.results.save({attemptId:"attempt-1",score:80})).status).toBe("saved");
+});
+
+test("progress recovery rejects another participant, attempt, and duplicate attempt references",async()=>{
+ const f=fixture();await start(f);
+ for(const patch of [
+  (data:any)=>({...data,student_id:"other-student"}),
+  (data:any)=>({...data,games:[{...data.games[0],attempt:{...data.games[0].attempt,student_id:"other-student"}}]}),
+  (data:any)=>({...data,games:[{...data.games[0],attempt:{...data.games[0].attempt,id:"other-attempt"}}]}),
+  (data:any)=>({...data,games:[data.games[0],{...data.games[1],attempt:{...data.games[0].attempt,game_id:2}}]}),
+ ]){
+  f.setProgress(patch);await expect(f.api.results.inspect("attempt-1")).rejects.toThrow(BackendValidationError);
+ }
 });

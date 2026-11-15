@@ -6,11 +6,12 @@ import { eligibilityService, eligibilityDemo, isMock } from "@/services";
 import type { EligibilitySnapshot, EventDay, BoothSection } from "@/services/eligibility-service";
 import type { DemoHistory, EligibilityDemoConfig } from "@/services/mock-eligibility-service";
 import { MockHistoryConflict, MOCK_GAME_CATALOG, MOCK_MAX_POINTS } from "@/services/mock-game-catalog";
+import { BackendValidationError } from "@/services/backend-services";
 
 import { GameSessionPanel } from "@/features/games/game-session-panel";
 import type { GameAttempt } from "@/services/attempt-service";
 
-type LoadState = { kind: "loading" } | { kind: "error" } | { kind: "conflict"; message: string } | { kind: "ready"; data: EligibilitySnapshot };
+type LoadState = { kind: "loading" } | { kind: "error"; message?: string } | { kind: "conflict"; message: string } | { kind: "ready"; data: EligibilitySnapshot };
 export function EligibilityPanel({ participantIdentifier, onLaunch, onBusy }: { participantIdentifier: string; onLaunch: (attempt: GameAttempt) => void; onBusy: (busy: boolean) => void }) {
   const [launchPending, setLaunchPending] = useState(false);
   const handlePending = useCallback((value: boolean) => { setLaunchPending(value); onBusy(value); }, [onBusy]);
@@ -26,7 +27,7 @@ export function EligibilityPanel({ participantIdentifier, onLaunch, onBusy }: { 
     eligibilityService.load(participantIdentifier).then(data => {
       if (!cancelled && current === generation.current) setState({ kind: "ready", data });
     }).catch(error => {
-      if (!cancelled && current === generation.current) setState(isMock && error instanceof MockHistoryConflict ? { kind: "conflict", message: error.message } : { kind: "error" });
+      if (!cancelled && current === generation.current) setState(isMock && error instanceof MockHistoryConflict ? { kind: "conflict", message: error.message } : { kind: "error", message: error instanceof BackendValidationError ? error.message : undefined });
     });
     return () => { cancelled = true; };
   }, [participantIdentifier, revision]);
@@ -49,7 +50,7 @@ export function EligibilityPanel({ participantIdentifier, onLaunch, onBusy }: { 
       <label>سجل تجريبي<select aria-label="سجل تجريبي" value={config.history} onChange={e => change({ history: e.target.value as DemoHistory })}><option value="new">بدون مشاركات</option><option value="mock">كتالوج ESCAPE.EXE الموحّد</option><option value="previous">نتيجة سابقة معتمدة</option><option value="played-today">أكمل لعبة في اليوم نفسه</option><option value="repeated">أكمل لعبة سابقًا</option><option value="active">محاولة قيد التنفيذ</option><option value="complete">أكمل الألعاب الخمس</option></select></label>
     </div><label className="offline-control"><input type="checkbox" checked={config.offline} onChange={e => change({ offline: e.target.checked })} />محاكاة تعذّر تحميل الأهلية</label></details>}
     {state.kind === "loading" && <p className="eligibility-loading" role="status"><LoaderCircle className="animate-spin" />جارٍ التحقق من الأهلية والنتائج…</p>}
-    {state.kind === "error" && <div className="eligibility-error"><p role="alert">تعذّر تحميل حالة المشارك. لا يمكن تحديد الألعاب المسموحة حتى ينجح التحقق.</p><Button variant="outline" onClick={() => reload()}>إعادة تحميل الأهلية</Button></div>}
+    {state.kind === "error" && <div className="eligibility-error"><p role="alert">{state.message || "تعذّر تحميل حالة المشارك. لا يمكن تحديد الألعاب المسموحة حتى ينجح التحقق."}</p><Button variant="outline" onClick={() => reload()}>إعادة تحميل الأهلية</Button></div>}
     {state.kind === "conflict" && <div className="eligibility-error" role="alert"><h4>تعارض في السجل التجريبي</h4><p>{state.message}</p><p>لم يُعتمد مجموع النقاط أو عدد الألعاب المكتملة.</p><Button variant="outline" onClick={() => reload()}>إعادة التحقق من البيانات</Button></div>}
     {data && <>
       {!isMock && <p className="games-help">بدء اللعب يتطلب إضافة ملفات اللعبة الحقيقية.</p>}
