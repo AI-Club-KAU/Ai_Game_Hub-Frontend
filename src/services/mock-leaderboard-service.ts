@@ -2,6 +2,8 @@
 import type { LeaderboardService } from "./leaderboard-service";
 import { savedResults } from "./mock-result-service";
 import { mockParticipantName } from "./mock-participant-service";
+import { activeAttempts } from "./mock-attempt-store";
+import { assertMockHistory } from "./mock-game-catalog";
 type Mode = "saved" | "sample" | "empty" | "offline";
 let mode: Mode = "saved";
 export const leaderboardDemo = { getMode: () => mode, setMode: (value: Mode) => { mode = value; }, reset: () => { mode = "saved"; } };
@@ -10,6 +12,7 @@ export const mockLeaderboardService: LeaderboardService = {
     const scenario = mode;
     await new Promise(resolve => setTimeout(resolve, 650));
     if (scenario === "offline") throw new Error("Leaderboard unavailable");
+    assertMockHistory([...savedResults.values()], [...activeAttempts.values()]);
     const totals = new Map<string, { displayName: string; totalScore: number; gamesCompleted: number }>();
     if (scenario === "saved") {
       for (const result of savedResults.values()) {

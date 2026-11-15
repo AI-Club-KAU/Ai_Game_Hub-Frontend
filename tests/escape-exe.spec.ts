@@ -22,11 +22,13 @@ async function prepare(page: Page, waitForLoad = true) {
 
 test("asset registry keeps ESCAPE and QA mock-only and rejects unknown IDs", () => {
   expect(getGameAsset("mock")).toEqual({ entry: "/games/escape-exe/index.html", readiness: "load" });
-  for (const id of ["mock", "1", "2", "3", "4", "5"]) {
+  for (const id of ["mock", "2", "3", "4", "5"]) {
     expect(canLaunchGame(id, true)).toBe(true);
     expect(canLaunchGame(id, false)).toBe(false);
   }
   expect(getGameAsset("unknown")).toBeNull();
+  expect(getGameAsset("1")).toBeNull();
+  expect(canLaunchGame("1", true)).toBe(false);
   expect(canLaunchGame("unknown", true)).toBe(false);
 });
 

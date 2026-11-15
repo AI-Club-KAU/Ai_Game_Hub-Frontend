@@ -1,6 +1,8 @@
 import type { AttemptService, GameAttempt, StartRequest, StartResult } from "./attempt-service";
 import { activeAttempts, activeAttemptFor, activeAttemptsFor } from "./mock-attempt-store";
 import { mockEligibilityService } from "./mock-eligibility-service";
+import { savedResults } from "./mock-result-service";
+import { assertMockHistory, findMockGame, MockHistoryConflict } from "./mock-game-catalog";
 export type StartDemoMode = "normal" | "offline" | "lost-response" | "rejected";
 let mode: StartDemoMode = "normal";
 const completedRequests = new Map<string, { request: StartRequest; attempt: GameAttempt }>();
@@ -13,15 +15,20 @@ export const mockAttemptService: AttemptService = {
   async inspect(identifier) {
     await new Promise(resolve => setTimeout(resolve, 350));
     if (mode === "offline") throw new Error("Mock connection unavailable");
+    assertMockHistory([...savedResults.values()], [...activeAttempts.values()], identifier);
     const attempt = activeAttemptFor(identifier);
     return attempt ? { ...attempt } : null;
   },
   async listActive(identifier) {
     await new Promise(resolve => setTimeout(resolve, 350));
     if (mode === "offline") throw new Error("Mock connection unavailable");
+    assertMockHistory([...savedResults.values()], [...activeAttempts.values()], identifier);
     return activeAttemptsFor(identifier).map(attempt => ({ ...attempt }));
   },
   start(request) {
+    try { assertMockHistory([...savedResults.values()], [...activeAttempts.values()], request.participantIdentifier); }
+    catch (error) { if (error instanceof MockHistoryConflict) return Promise.resolve(rejected(error.message)); throw error; }
+    if (!findMockGame(request.gameId)) return Promise.resolve(rejected("اللعبة غير موجودة في كتالوج Mock المعتمد."));
     const saved = completedRequests.get(request.requestId);
     if (saved && !activeAttempts.has(saved.attempt.id)) return Promise.resolve(rejected("انتهت هذه المحاولة؛ حدّث حالة المشارك."));
     if (saved) return Promise.resolve(sameRequest(saved.request, request) ? { status: "started", attempt: { ...saved.attempt } } : rejected("معرّف الطلب مستخدم لاختيار آخر. حدّث الحالة."));

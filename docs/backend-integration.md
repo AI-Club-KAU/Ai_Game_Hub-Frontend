@@ -29,7 +29,7 @@ https://wjhbdtznydxozorfanrx.supabase.co/functions/v1
 
 ## قيود التشغيل الحالية
 
-- يميّز game-assets.ts بين أصول QA ذات المعرّفات 1–5، التي تستخدم public/games/container-check/، وبين ESCAPE.EXE في public/games/escape-exe/ بالمعرّف المحلي mock. هذا المعرّف ليس game_id رقميًا معتمدًا من Backend.
+- يميّز game-assets.ts بين أصول QA ذات المعرّفات 2–5، التي تستخدم public/games/container-check/، وبين ESCAPE.EXE في public/games/escape-exe/ بالمعرّف المحلي mock. هذا المعرّف ليس game_id رقميًا معتمدًا من Backend.
 - أصول QA وESCAPE.EXE محجوبة عن البدء والاستئناف في Live. زر نتيجة 80 مخصص لأصول QA في Mock؛ لا يظهر مع ESCAPE.EXE أو في Live.
 - ESCAPE.EXE مدمجة وتعمل في Mock: تُفعّل مصافحة المضيف وضع المنصة، وتُستقبل robomaze:result مع payload.finalScore بعد التحقق من المصدر وorigin=null ورمز الجلسة واتساق الإجابات. تُحفظ الدرجة الفعلية عبر خدمة Mock الموجودة، وتبقى شاشة النهاية ظاهرة مع منع الإعادة. بعد تأكيد الحفظ وعدّ 10 ثوانٍ يعود المشارك نفسه إلى اختيار الألعاب وتُحدّث حالته.
 - ESCAPE.EXE غير مفعّلة في Live، ولا تُرسل لها طلبات Start أو Finish حية. التفعيل ينتظر تأكيد مدى لمعرّف Backend وربطه بـescape-exe وعقد اعتماد نتائج المتصفح وبيئة اختبار الرحلة الحقيقية. لا نفترض أن معرّفها الرقمي هو 1.

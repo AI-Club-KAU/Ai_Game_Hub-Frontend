@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { mockAttemptService, attemptDemo } from "../src/services/mock-attempt-service";
 import { eligibilityDemo } from "../src/services/mock-eligibility-service";
 import { activeAttempts } from "../src/services/mock-attempt-store";
+import { MOCK_GAME_CATALOG } from "../src/services/mock-game-catalog";
 
 test("concurrent Start calls and replay create exactly one active attempt", async () => {
   eligibilityDemo.reset(); attemptDemo.setMode("normal");
@@ -26,8 +27,8 @@ test("five games can finish on the same day, each only once, total 500",async()=
  const {mockEligibilityService}=await import("../src/services/mock-eligibility-service");
  eligibilityDemo.reset();attemptDemo.setMode("normal");resultDemo.reset();
  const identifier="all-five-same-day";
- for(let game=1;game<=5;game++){
-   const request={requestId:crypto.randomUUID(),participantIdentifier:identifier,gameId:String(game),day:3 as const,section:"students" as const};
+ for(const game of MOCK_GAME_CATALOG){
+   const request={requestId:crypto.randomUUID(),participantIdentifier:identifier,gameId:game.id,day:3 as const,section:"students" as const};
    const started=await mockAttemptService.start(request);
    expect(started.status).toBe("started");
    if(started.status!=="started")throw new Error("Start failed");

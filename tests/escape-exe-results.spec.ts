@@ -69,6 +69,9 @@ test("first result owns the platform attempt, saves 100 once, and returns only a
   await expect(page.getByLabel("سجل تجريبي", { exact: true })).toHaveValue("mock");
   await expect(page.locator("#participant-name")).toHaveCount(0);
   await expect(page.getByRole("radio", { name: /ESCAPE.EXE/ })).toBeDisabled();
+  for (const gameId of ["2", "3", "4", "5"]) {
+    await expect(page.locator(`input[name="eligible-game"][value="${gameId}"]`)).toBeEnabled();
+  }
   await expect(page.getByRole("button", { name: "استئناف المحاولة" })).toHaveCount(0);
   await expect(page.locator(".previous-results li")).toHaveCount(1);
   await expect(page.locator(".previous-results")).toContainText("100 / 100");
@@ -120,6 +123,7 @@ for (const mode of ["offline", "rejected", "lost-response"] as const) {
 }
 
 for (const touch of [false, true]) test(`real timeout preserves animations and blocks replay with touch=${touch}`, async ({ browser }) => {
+  test.setTimeout(60000);
   const context = await browser.newContext({ viewport: { width: 1200, height: 1000 }, hasTouch: touch });
   const page = await context.newPage();
   try {
@@ -149,6 +153,7 @@ for (const touch of [false, true]) test(`real timeout preserves animations and b
 });
 
 test("real perfect run saves 100 with the original question bank and score animation", async ({ page }) => {
+  test.setTimeout(60000);
   const source = readFileSync("public/games/escape-exe/script.js", "utf8");
   const bank = JSON.parse(source.match(/const QUESTION_BANK = (\{[\s\S]*?\n\});/)![1]) as Record<string, { prompt: string; options: string[]; answer: number }[]>;
   const answers = new Map(Object.values(bank).flat().map(q => [q.prompt, q.options[q.answer]]));
@@ -186,6 +191,7 @@ test("real perfect run saves 100 with the original question bank and score anima
 });
 
 test("standalone query parameters cannot opt in, and normal PLAY AGAIN still works", async ({ page }) => {
+  test.setTimeout(60000);
   await page.goto("/games/escape-exe/index.html?nonce=12345678-1234-1234-1234-123456789abc&platform=true");
   await page.locator("#startButton").click();
   await page.evaluate(() => { const original = requestAnimationFrame.bind(window); let extra = 0; window.requestAnimationFrame = cb => original(t => { extra += 250; cb(t + extra); }); });

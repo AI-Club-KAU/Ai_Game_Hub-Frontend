@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { resultService, resultDemo, isMock } from "@/services";
 import type { ResultRequest, SavedResult } from "@/services/result-service";
+import { MockHistoryConflict } from "@/services/mock-game-catalog";
 
 export function ResultScreen({ request, onComplete, embedded = false }: { request: ResultRequest; onComplete: () => void; embedded?: boolean }) {
   const [busy, setBusy] = useState(true);
@@ -27,7 +28,7 @@ export function ResultScreen({ request, onComplete, embedded = false }: { reques
         if (response.status === "saved") setSaved(response.result);
         else setMessage(response.message);
       }
-    } catch { setMessage("تعذّر تأكيد حفظ النتيجة. أعد الجهاز إلى عضو النادي لإعادة المحاولة أو التحقق من حالة الحفظ. لم نفترض نجاح العملية."); }
+    } catch (error) { setMessage(isMock && error instanceof MockHistoryConflict ? error.message : "تعذّر تأكيد حفظ النتيجة. أعد الجهاز إلى عضو النادي لإعادة المحاولة أو التحقق من حالة الحفظ. لم نفترض نجاح العملية."); }
     finally { flight.current = false; setBusy(false); }
   }
   useEffect(() => { void perform(); }, []); // Same immutable request throughout retries.

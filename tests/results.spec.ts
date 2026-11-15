@@ -29,6 +29,7 @@ test("confirmed result returns to the same participant, refreshes progress and p
   await page.clock.install();
   await finish(page, "normal", true);
   await expect(page.getByRole("heading", {name:"تم تأكيد حفظ النتيجة"})).toBeVisible();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
   await page.screenshot({path:"tmp/qa/result-desktop.png",caret:"initial"});
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -37,6 +38,7 @@ test("confirmed result returns to the same participant, refreshes progress and p
   await expect(page.locator(".result-card")).toBeVisible();
   await page.clock.fastForward(1100);
   await expect(page.locator("iframe")).toHaveCount(0);
+  await page.clock.resume();
   await expect(page.locator(".participant-details dd")).toHaveText(["مشارك تجريبي", "00123"]);
   await expect(page.locator("#participant-name")).toHaveCount(0);
   await expect(page.locator(".previous-results li")).toHaveCount(1);

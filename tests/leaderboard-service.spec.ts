@@ -6,7 +6,7 @@ test("top three aggregates saved results only, keeps equal ranks and returns no 
  savedResults.clear(); leaderboardDemo.reset();
  expect((await service.load()).entries).toEqual([]);
  for(const [id,participant,score,day] of [["a","one",80,1],["b","one",90,2],["c","two",100,1],["d","three",100,1],["e","four",0,1]] as const) {
-  savedResults.set(id,{attemptId:id,participantIdentifier:participant,gameId:String(day),gameTitle:"Test",day,score});
+  savedResults.set(id,{attemptId:id,participantIdentifier:participant,gameId:day===1?"mock":String(day),gameTitle:"Test",day,score});
  }
  const rows=(await service.load()).entries;
  expect(rows.map(row=>row.totalScore)).toEqual([170,100,100]);
