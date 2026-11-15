@@ -54,11 +54,14 @@ test("first result owns the platform attempt, saves 100 once, and returns only a
   await page.clock.install();
   await launch(page);
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  expect(await page.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })))).toBe(false);
   await send(page, 100, true);
-  await expect(page.locator(".result-embedded")).toContainText("جارٍ التحقق من حفظ النتيجة");
+  await expect(page.locator(".result-embedded")).toContainText("جارٍ حفظ النتيجة");
+  expect(await page.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })))).toBe(true);
   await expect(page.locator("iframe")).toBeVisible();
   await page.clock.runFor(700);
   await expect(page.locator(".result-embedded")).toContainText("تم تأكيد حفظ النتيجة");
+  expect(await page.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })))).toBe(false);
   await expect(page.locator(".result-embedded .result-score b")).toHaveText("100");
   await page.clock.runFor(9999);
   await expect(page.locator("iframe")).toHaveCount(1);

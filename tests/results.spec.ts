@@ -83,7 +83,7 @@ test("offline save and inspection remain unresolved, retry saves the same attemp
   await page.getByText("محاكاة خدمة حفظ النتيجة",{exact:true}).click();
   await page.getByLabel("استجابة خدمة الحفظ").selectOption("normal");
   await page.getByRole("button",{name:"التحقق من حالة الحفظ"}).click();
-  await expect(page.locator(".result-card").getByRole("alert")).toContainText("لم تُحفظ النتيجة");
+  await expect(page.locator(".result-card").getByRole("alert")).toContainText("لم يظهر تأكيد للحفظ");
   await page.getByRole("button",{name:"إعادة محاولة الحفظ"}).click();
   await expect(page.getByRole("heading",{name:"تم تأكيد حفظ النتيجة"})).toBeVisible();
 });

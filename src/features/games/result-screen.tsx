@@ -5,31 +5,44 @@ import { resultService, resultDemo, isMock } from "@/services";
 import type { ResultRequest, SavedResult } from "@/services/result-service";
 import { MockHistoryConflict } from "@/services/mock-game-catalog";
 import { BackendValidationError } from "@/services/backend-services";
+import { registerResultUnloadWarning } from "./result-unload-warning";
 
 export function ResultScreen({ request, onComplete, embedded = false }: { request: ResultRequest; onComplete: () => void; embedded?: boolean }) {
   const [busy, setBusy] = useState(true);
+  const [action, setAction] = useState<"save" | "check" | "retry">("save");
   const [saved, setSaved] = useState<SavedResult | null>(null);
   const [message, setMessage] = useState("");
   const [remaining, setRemaining] = useState(10);
   const flight = useRef(false);
+  const removeUnloadWarning = useRef<(() => void) | null>(null);
   const complete = useRef(onComplete);
   complete.current = onComplete;
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { heading.current?.focus(); }, [saved, message]);
-  async function perform(inspect = false) {
+  useEffect(() => {
+    if (saved) return;
+    const cleanup = registerResultUnloadWarning();
+    removeUnloadWarning.current = cleanup;
+    return () => { cleanup(); removeUnloadWarning.current = null; };
+  }, [saved]);
+  function confirmSaved(result: SavedResult) {
+    removeUnloadWarning.current?.();
+    setSaved(result);
+  }
+  async function perform(inspect = false, retry = false) {
     if (flight.current) return;
-    flight.current = true; setBusy(true); setMessage("");
+    flight.current = true; setAction(inspect ? "check" : retry ? "retry" : "save"); setBusy(true); setMessage("");
     try {
       if (inspect) {
         const result = await resultService.inspect(request.attemptId);
-        if (result) setSaved(result);
-        else setMessage("لم تُحفظ النتيجة بعد. يمكنك إعادة محاولة الحفظ لنفس المحاولة.");
+        if (result) confirmSaved(result);
+        else setMessage("لم يظهر تأكيد للحفظ في آخر تحقق. قد يكون الطلب السابق ما زال قيد المعالجة؛ أعد التحقق أو حاول الحفظ مجددًا.");
       } else {
         const response = await resultService.save(request);
-        if (response.status === "saved") setSaved(response.result);
+        if (response.status === "saved") confirmSaved(response.result);
         else setMessage(response.message);
       }
-    } catch (error) { setMessage(error instanceof BackendValidationError || (isMock && error instanceof MockHistoryConflict) ? error.message : "تعذّر تأكيد حفظ النتيجة. أعد الجهاز إلى عضو النادي لإعادة المحاولة أو التحقق من حالة الحفظ. لم نفترض نجاح العملية."); }
+    } catch (error) { setMessage(error instanceof BackendValidationError || (isMock && error instanceof MockHistoryConflict) ? error.message : "تعذّر تأكيد حفظ النتيجة بسبب مشكلة في الاتصال أو الخدمة. قد تكون النتيجة حُفظت؛ تحقّق من حالة الحفظ قبل إعادة المحاولة."); }
     finally { flight.current = false; setBusy(false); }
   }
   useEffect(() => { void perform(); }, []); // Same immutable request throughout retries.
@@ -41,13 +54,14 @@ export function ResultScreen({ request, onComplete, embedded = false }: { reques
     return () => { clearInterval(interval); clearTimeout(timeout); };
   }, [saved]);
   const Shell = embedded ? "section" : "main";
+  const busyMessage = action === "check" ? "جارٍ التحقق من حالة الحفظ…" : action === "retry" ? (isMock ? "جارٍ إعادة محاولة الحفظ…" : "جارٍ التحقق من الحالة وإعادة الحفظ عند الحاجة…") : "جارٍ حفظ النتيجة…";
   return <Shell className={embedded ? "result-embedded" : "result-shell"} dir="rtl" aria-label={embedded ? "حالة حفظ نتيجة اللعبة" : undefined}><section className="result-card" aria-busy={busy}>
     <p className="eyebrow">نادي الذكاء الاصطناعي · {isMock ? "نتيجة تجريبية" : "نتيجة المشاركة"}</p>
-    <h1 ref={heading} tabIndex={-1}>{saved ? "تم تأكيد حفظ النتيجة" : busy ? "جارٍ التحقق من حفظ النتيجة…" : "بانتظار تأكيد الحفظ"}</h1>
+    <h1 ref={heading} tabIndex={-1}>{saved ? "تم تأكيد حفظ النتيجة" : busy ? busyMessage : "بانتظار تأكيد الحفظ"}</h1>
     {saved ? <><p>{saved.gameTitle}</p><p className="result-score" dir="ltr"><b>{saved.score}</b><span> / 100</span></p><p role="status">العودة إلى اختيار ألعابك خلال {remaining} ثوانٍ</p></> : <>
-      <p>لن تبدأ العودة التلقائية حتى تؤكد الخدمة حفظ النتيجة.</p>
+      <p>لن تبدأ العودة التلقائية حتى تؤكد الخدمة حفظ النتيجة. تجنّب تحديث الصفحة أو إغلاقها قبل التأكيد.</p>
       {message && <p role="alert" className="error-message">{message}</p>}
-      <div className="result-actions"><Button disabled={busy} onClick={() => void perform()}>إعادة محاولة الحفظ</Button><Button disabled={busy} variant="outline" onClick={() => void perform(true)}>التحقق من حالة الحفظ</Button></div>
+      <div className="result-actions"><Button disabled={busy} onClick={() => void perform(false, true)}>إعادة محاولة الحفظ</Button><Button disabled={busy} variant="outline" onClick={() => void perform(true)}>التحقق من حالة الحفظ</Button></div>
       {isMock && <details><summary>محاكاة خدمة حفظ النتيجة</summary><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" disabled={busy} defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label></details>}
     </>}
     {isMock && <small>محاكاة في ذاكرة الصفحة فقط؛ تحديث الصفحة يمسح البيانات التجريبية.</small>}
