@@ -7,14 +7,14 @@ export const test = base.extend<{
   newIsolatedContext: (options?: BrowserContextOptions) => Promise<BrowserContext>;
   unexpectedNetwork: string[];
 }>({
-  browser: [async ({ playwright }, use) => {
+  browser: [async ({ playwright, headless }, use) => {
     // This proxy has no forwarding code. Even a missed route/new context cannot reach an external host.
     const proxy = createServer((_request, response) => { response.writeHead(403); response.end("Offline tests only"); });
     proxy.on("connect", (_request, socket) => socket.destroy());
     await new Promise<void>(resolve => proxy.listen(0, "127.0.0.1", resolve));
     const address = proxy.address();
     if (!address || typeof address === "string") throw new Error("Cannot establish offline browser proxy");
-    const browser = await playwright.chromium.launch({ channel: "chrome", proxy: {
+    const browser = await playwright.chromium.launch({ channel: "chrome", headless, proxy: {
       server: `http://127.0.0.1:${address.port}`, bypass: "127.0.0.1,localhost,[::1]",
     }, args: ["--disable-gpu", "--disable-background-networking", "--force-webrtc-ip-handling-policy=disable_non_proxied_udp"] });
     try { await use(browser); } finally {

@@ -7,7 +7,7 @@ test("Live 2 is Dev Run while the entire five-game Mock catalog stays unchanged"
   expect(getGameAsset("2", false)).toEqual({game:"dev-run",entry:"/games/dev-run/index.html",readiness:"load"});
   expect(getGameAsset("mock", true)?.game).toBe("escape-exe");
   for (const id of ["2","3","4","5"]) expect(getGameAsset(id, true)?.game).toBe("qa");
-  for (const id of ["3","4","5","mock","02","2.0","unknown"]) expect(getGameAsset(id, false)).toBeNull();
+  for (const id of ["4","5","mock","02","2.0","unknown"]) expect(getGameAsset(id, false)).toBeNull();
 });
 
 test("static entry, relative fonts and original audio initialize inside allow-scripts only", async ({ page }) => {

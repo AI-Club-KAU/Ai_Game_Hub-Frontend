@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>وصّل طريقك | Dev Week · AIClub</title>
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+  <link rel="apple-touch-icon" href="assets/icons/favicon.png">
+  <!-- نحمّل الخطوط مع أول الصفحة عشان تكون جاهزة قبل ما ينرسم النص -->
+  <link rel="preload" href="assets/fonts/Lalezar-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/ReadexPro.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <!-- شريط علوي -->
+  <header class="topbar">
+    <img src="assets/images/fcit-logo-white.png" alt="FCIT" class="logo logo-fcit">
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btnSound" title="الصوت" aria-label="تشغيل/كتم الصوت">🔊</button>
+      <button class="icon-btn" id="btnFull" title="ملء الشاشة" aria-label="ملء الشاشة">⛶</button>
+    </div>
+    <img src="assets/images/aiclub-logo-white.png" alt="AIClub" class="logo" id="logo">
+  </header>
+
+  <!-- ===== شاشة البداية ===== -->
+  <section class="screen active" id="screenStart">
+    <div class="start-wrap">
+      <div class="start-card">
+        <p class="eyebrow">لعبة بوث AIClub · Dev Week</p>
+        <h1 class="title">وصّل طريقك</h1>
+        <p class="subtitle">من ⭐ إلى 🏁 قبل لا يخلص الوقت</p>
+
+        <!-- لوحة صغيرة تشرح اللعبة بحركة: تختار خلية، صح/غلط، وتوصل -->
+        <div class="demo">
+          <svg id="demoBoard" class="demo-board" aria-hidden="true"></svg>
+          <button type="button" class="demo-play" id="demoPlay">▶ شوف كيف تلعب</button>
+        </div>
+
+        <ul class="rules" id="rules">
+          <li><span class="dot">1</span>اضغط على خلية مضيئة قدّامك، يطلع لك سؤال.</li>
+          <li><span class="dot ok">✓</span>صح؟ الخلية صارت لك وانضافت لطريقك.</li>
+          <li><span class="dot bad">🔒</span>غلط؟ الخلية تتقفل ولازم تلف من طريق ثاني.</li>
+          <li><span class="dot">⏱</span>عندك <b id="ruleTime">120</b> ثانية، وكل ما وصلت أسرع زادت نقاطك 🏆</li>
+        </ul>
+
+        <form id="startForm" autocomplete="off">
+          <label for="playerName" class="sr-only">اسمك</label>
+          <input id="playerName" type="text" maxlength="18" placeholder="اكتب اسمك هنا" required>
+          <button type="submit" class="btn btn-primary">ابدأ</button>
+        </form>
+      </div>
+
+      <aside class="board-card">
+        <div class="board-head">
+          <h2>🏆 لوحة الأبطال</h2>
+          <button type="button" class="info-btn" data-open-info>ⓘ كيف تنحسب النقاط؟</button>
+        </div>
+        <ol class="leaderboard" id="lbStart"></ol>
+      </aside>
+    </div>
+    <footer class="site-footer"><b>#نقود_المستقبل</b> · نادي الذكاء الاصطناعي — <span lang="en">FCIT</span></footer>
+  </section>
+
+  <!-- ===== شاشة اللعب ===== -->
+  <section class="screen" id="screenGame">
+    <div class="game-wrap">
+      <aside class="side">
+        <div class="side-head">
+          <h2 class="game-title">وصّل طريقك</h2>
+          <p class="game-sub">من ⭐ إلى 🏁 قبل لا يخلص الوقت</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat" id="statTime">
+            <span class="stat-label">الوقت</span>
+            <span class="stat-value" id="timeValue">2:00</span>
+            <span class="time-bar"><span id="timeBar"></span></span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">الخلايا</span>
+            <span class="stat-value" id="cellsValue">0</span>
+          </div>
+        </div>
+
+        <div class="question-card" id="questionCard">
+          <div class="q-empty" id="qEmpty">
+            <div class="q-empty-icon">👆</div>
+            <p>اختر خلية مضيئة جنب طريقك عشان يطلع لك السؤال</p>
+          </div>
+          <div class="q-body hidden" id="qBody">
+            <div class="q-head">
+              <span class="q-emoji" id="qEmoji"></span>
+              <span class="q-cat" id="qCat"></span>
+            </div>
+            <p class="q-text" id="qText"></p>
+            <div class="q-options" id="qOptions"></div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="sw sw-ok"></i>جاوبتها صح</span>
+          <span><i class="sw sw-lock"></i>مقفولة</span>
+          <span><i class="sw sw-sel"></i>المختارة</span>
+          <span><i class="sw sw-avail"></i>متاحة</span>
+        </div>
+      </aside>
+
+      <div class="board-area">
+        <svg id="board" class="board" role="img" aria-label="شبكة الخلايا"></svg>
+      </div>
+    </div>
+
+    <div class="countdown hidden" id="countdown"><span id="countNum">3</span></div>
+    <div class="toast hidden" id="toast"></div>
+  </section>
+
+  <!-- ===== شاشة النتيجة ===== -->
+  <section class="screen" id="screenResult">
+    <div class="result-wrap">
+      <div class="result-card" id="resultCard">
+        <div class="result-emoji" id="resultEmoji">🏁</div>
+        <h1 class="result-title" id="resultTitle">وصلت!</h1>
+        <p class="result-sub" id="resultSub"></p>
+
+        <div class="result-score" aria-label="النقاط">
+          <b id="rScore">0</b><span>/ 100</span>
+        </div>
+
+        <div class="result-stats">
+          <div><span>الوقت</span><b id="rTime">—</b></div>
+          <div><span>صح</span><b id="rCorrect">0</b></div>
+          <div><span>غلط</span><b id="rWrong">0</b></div>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-primary" id="btnAgain">اللاعب التالي ▶</button>
+        </div>
+        <p class="auto-back" id="autoBack"></p>
+      </div>
+
+      <aside class="board-card">
+        <div class="board-head">
+          <h2>🏆 لوحة الأبطال</h2>
+          <button type="button" class="info-btn" data-open-info>ⓘ كيف تنحسب النقاط؟</button>
+        </div>
+        <ol class="leaderboard" id="lbResult"></ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===== نافذة: كيف تنحسب النقاط ===== -->
+  <div class="modal hidden" id="infoModal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="modal-box">
+      <button type="button" class="modal-close" id="infoClose" aria-label="إغلاق">✕</button>
+      <h2 id="infoTitle">🎯 نقاطك من 100</h2>
+      <ul class="info-list">
+        <li><span>✅</span><div><b>كل إجابة صح = 10 نقاط</b><small>أقصى شي 70، لأن أقصر طريق للنهاية 7 خلايا (7 × 10)</small></div></li>
+        <li><span>🏁</span><div><b>توصل للنهاية = 10 نقاط</b></div></li>
+        <li><span>⚡</span><div><b>السرعة = لين 20 نقطة</b><small>توصل في 40 ثانية أو أقل تاخذها كاملة، وبعدها كل 4 ثواني تنقص نقطة</small></div></li>
+      </ul>
+
+      <h3>🏆 إذا تساوت النقاط، الترتيب:</h3>
+      <ol class="info-order">
+        <li>الأسرع</li>
+        <li>اللي وصل بخلايا أقل</li>
+        <li>الأقل أخطاء</li>
+        <li>اللي لعب أول</li>
+      </ol>
+
+      <p class="info-example">💡 <b>مثال:</b> وصلت في 50 ثانية بـ7 إجابات صح<br>
+        <bdi dir="ltr" class="eq">70 + 10 + 17 = <b>97</b></bdi></p>
+    </div>
+  </div>
+
+  <!-- أصوات -->
+  <audio id="sndClick"   src="assets/sounds/click.mp3"   preload="auto"></audio>
+  <audio id="sndCorrect" src="assets/sounds/correct.mp3" preload="auto"></audio>
+  <audio id="sndWrong"   src="assets/sounds/wrong.mp3"   preload="auto"></audio>
+  <audio id="sndTick"    src="assets/sounds/tick.mp3"    preload="auto"></audio>
+  <audio id="sndCount"   src="assets/sounds/count.mp3"   preload="auto"></audio>
+  <audio id="sndGo"      src="assets/sounds/go.mp3"      preload="auto"></audio>
+  <audio id="sndWin"     src="assets/sounds/win.mp3"     preload="auto"></audio>
+  <audio id="sndLose"    src="assets/sounds/lose.mp3"    preload="auto"></audio>
+
+  <script src="assets/sounds/sounds-data.js"></script>
+  <script src="questions.js"></script>
+  <!-- config.js: موجود بس في ريبو القسم الخاص (رابط شيت لوحة الأبطال). لو مو موجود، اللعبة تشتغل عادي -->
+  <script src="config.js" onerror="void 0"></script>
+  <script src="script.js"></script>
+</body>
+</html>
