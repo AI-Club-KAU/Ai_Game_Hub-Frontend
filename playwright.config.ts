@@ -1,9 +1,10 @@
 import "./scripts/offline-network-guard.cjs";
 import { defineConfig } from "@playwright/test";
-import { TEST_ORIGIN } from "./tests/test-environment";
 
 const mode = process.env.NEXT_PUBLIC_API_MODE;
 if (mode !== "mock" && mode !== "live") throw new Error("Tests require explicit NEXT_PUBLIC_API_MODE=mock or live");
+// Keep this config self-contained: Docker excludes tests/ but still type-checks this file.
+const TEST_ORIGIN = `http://127.0.0.1:${mode === "mock" ? 3101 : 3102}`;
 
 export default defineConfig({
   testDir: "./tests",
