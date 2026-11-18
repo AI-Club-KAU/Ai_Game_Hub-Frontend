@@ -8,12 +8,12 @@ async function open(page: Page) {
 }
 test("six accessible tabs retain Overall top-three ties and show ten independent per-game sample rows", async ({ page }) => {
   await open(page);
-  await expect(page.getByRole("tab")).toHaveText(["Overall", "ESCAPE.EXE", "Dev Run", "وصّل طريقك", "Game 4", "Game 5"]);
+  await expect(page.getByRole("tab")).toHaveText(["Overall", "ESCAPE.EXE", "Dev Run", "وصّل طريقك", "Game 4", "Spot The AI"]);
   await page.getByText("إعدادات عرض المتصدرين التجريبية", { exact: true }).click();
   await page.getByLabel("مصدر عرض المتصدرين").selectOption("sample");
   await expect(page.locator(".leaderboard-row")).toHaveCount(3);
   await expect(page.locator(".leaderboard-rank")).toHaveText(["1", "2", "2"]);
-  for (const name of ["ESCAPE.EXE", "Dev Run", "وصّل طريقك", "Game 4", "Game 5"]) {
+  for (const name of ["ESCAPE.EXE", "Dev Run", "وصّل طريقك", "Game 4", "Spot The AI"]) {
     await page.getByRole("tab", { name, exact: true }).click();
     await expect(page.getByRole("tabpanel")).toHaveAttribute("aria-busy", "true");
     await expect(page.locator(".leaderboard-row")).toHaveCount(10);
@@ -22,7 +22,7 @@ test("six accessible tabs retain Overall top-three ties and show ten independent
     await expect(page.locator(".leaderboard-points span").first()).toHaveText("نقطة من 100");
   }
   await expect(page.locator("main")).toContainText("غير متاحة للعب في Live");
-  expect(getGameAsset("4", false)).toBeNull();expect(getGameAsset("5", false)).toBeNull();
+  expect(getGameAsset("4", false)).toBeNull();expect(getGameAsset("5", false)?.game).toBe("spot-the-ai");
   await page.getByRole("tab", { name: "Overall", exact: true }).click();
   await expect(page.locator(".leaderboard-row")).toHaveCount(3);
   await expect(page.locator(".leaderboard-points span").first()).toHaveText("نقطة من 500");
@@ -46,7 +46,7 @@ test("per-game empty, loading, errors, stale responses and responsive keyboard t
   await page.getByRole("tab", { name: "Dev Run", exact: true }).focus();await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("tab", { name: "وصّل طريقك", exact: true })).toBeFocused();
   await expect(page.getByRole("tab", { name: "وصّل طريقك", exact: true })).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("End");await expect(page.getByRole("tab", { name: "Game 5", exact: true })).toBeFocused();
+  await page.keyboard.press("End");await expect(page.getByRole("tab", { name: "Spot The AI", exact: true })).toBeFocused();
   await page.keyboard.press("Home");await expect(page.getByRole("tab", { name: "Overall", exact: true })).toBeFocused();
   await expect(page.locator(".leaderboard-row")).toHaveCount(3);
   await page.screenshot({ path: "test-results/leaderboards-tabs-desktop.png", fullPage: true });

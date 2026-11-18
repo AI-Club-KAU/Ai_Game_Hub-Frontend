@@ -9,6 +9,7 @@ import { canLaunchGame, getGameAsset } from "./game-assets";
 import { escapeExeScore } from "./escape-exe-result";
 import { devRunScore } from "./dev-run-result";
 import { wasselTareeqakScore } from "./wassel-tareeqak-result";
+import { spotTheAiScore } from "./spot-the-ai-result";
 import type { ResultRequest } from "@/services/result-service";
 
 export function GameContainer({ attempt, onReturn, onComplete }: { attempt: GameAttempt; onReturn: () => void; onComplete: () => void }) {
@@ -40,14 +41,26 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
       if (cancelled || currentAsset.readiness !== "load" || channel) return;
       const devRun = currentAsset.game === "dev-run";
       const wassel = currentAsset.game === "wassel-tareeqak";
-      const protocol = wassel ? "wassel-tareeqak" : devRun ? "dev-run" : "escape";
+      const spot = currentAsset.game === "spot-the-ai";
+      const protocol = spot ? "spot-the-ai" : wassel ? "wassel-tareeqak" : devRun ? "dev-run" : "escape";
       activeWindow = frame.current?.contentWindow ?? null;
       if (!activeWindow) return;
       channel = new MessageChannel();
       channel.port1.onmessage = event => {
         if (!cancelled && !ready && event.data?.type === `ai-hub:${protocol}-ready` && event.data.nonce === nonce &&
-            (!(devRun || wassel) || (event.data.version === 1 && event.data.game === currentAsset.game))) {
+            (!(devRun || wassel || spot) || (event.data.version === 1 && event.data.game === currentAsset.game))) {
           ready = true; clearTimeout(timer); setState("ready");
+          return;
+        }
+        // Spot results travel exclusively on this iframe's transferred port, never window.message.
+        if (spot && ready && !cancelled && !accepted.current && activeWindow === frame.current?.contentWindow) {
+          const score = spotTheAiScore(event.data, nonce);
+          if (score === null) return;
+          accepted.current = true;
+          if (frame.current) { frame.current.inert = true; frame.current.tabIndex = -1; frame.current.blur(); }
+          channel?.port1.postMessage({ type: "ai-hub:spot-the-ai-lock", version: 1, game: "spot-the-ai", nonce });
+          setHelp(false);
+          setGameResult(Object.freeze({ attemptId: attempt.id, score }));
         }
       };
       activeWindow.postMessage({ type: `ai-hub:${protocol}-init`, version: 1, game: currentAsset.game, nonce }, "*", [channel.port2]);
@@ -55,6 +68,7 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
     function receive(event: MessageEvent) {
       if (cancelled || accepted.current) return;
       if (currentAsset?.readiness === "load") {
+        if (currentAsset.game === "spot-the-ai") return;
         if (!ready || event.source !== activeWindow ||
             event.source !== frame.current?.contentWindow || event.origin !== "null") return;
         const score = currentAsset.game === "wassel-tareeqak" ? wasselTareeqakScore(event.data, nonce) : currentAsset.game === "dev-run" ? devRunScore(event.data, nonce) : escapeExeScore(event.data, nonce);
@@ -96,6 +110,6 @@ export function GameContainer({ attempt, onReturn, onComplete }: { attempt: Game
       {state === "error" && <div className="game-load-error" role="alert"><h2>تعذّر تحميل صفحة اللعبة</h2><p>أعد تحميل اللعبة داخل الحاوية بنفس المحاولة، دون طلب بدء جديد.</p><Button onClick={() => setRevision(value => value + 1)}><RefreshCw />إعادة تحميل الحاوية</Button></div>}
       {source && <iframe key={`${attempt.id}:${revision}`} ref={frame} inert={!!gameResult} tabIndex={gameResult ? -1 : undefined} title="حاوية اللعبة" src={source} onLoad={() => loaded.current()} sandbox="allow-scripts" referrerPolicy="no-referrer" allow="camera 'none'; microphone 'none'; geolocation 'none'" className={state === "ready" ? "game-frame" : "game-frame game-frame-pending"} />}
       {gameResult && <div className="game-interaction-shield" aria-hidden="true" />}
-    </div>{gameResult && asset?.readiness === "load" && <ResultScreen embedded request={gameResult} onComplete={onComplete} />}{isMock && asset?.readiness === "container-check-v0" && <section className="result-demo"><details><summary>اختبار انتهاء المحاولة وحفظ النتيجة</summary><p>أداة عرض مؤقتة لعضو النادي؛ ليست نتيجة من لعبة حقيقية.</p><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label><Button disabled={state !== "ready"} onClick={() => setFinished(true)}>إنهاء تجريبي بنتيجة 80</Button></details></section>}<footer className="game-mode-footer"><span role="status">{state === "ready" ? (asset?.readiness === "load" ? "تم تحميل صفحة اللعبة" : "الحاوية جاهزة") : state === "error" ? "بانتظار استعادة التحميل" : "جارٍ التحميل"}</span><span>{asset?.readiness === "load" ? (isMock ? `${asset?.game === "wassel-tareeqak" ? "وصّل طريقك · اللوحة الداخلية محلية للجلسة" : asset?.game === "dev-run" ? "Dev Run" : "ESCAPE.EXE"} · نتائج محفوظة في Mock فقط` : `${asset?.game === "wassel-tareeqak" ? "وصّل طريقك · اللوحة الداخلية محلية للجلسة" : asset?.game === "dev-run" ? "Dev Run" : "ESCAPE.EXE"} · حفظ النتيجة عبر الخدمة`) : "صفحة اختبار للحاوية فقط · لا توجد نقاط أو نتائج محفوظة"}</span></footer>
+    </div>{gameResult && asset?.readiness === "load" && <ResultScreen embedded request={gameResult} onComplete={onComplete} />}{isMock && asset?.readiness === "container-check-v0" && <section className="result-demo"><details><summary>اختبار انتهاء المحاولة وحفظ النتيجة</summary><p>أداة عرض مؤقتة لعضو النادي؛ ليست نتيجة من لعبة حقيقية.</p><label>استجابة خدمة الحفظ<select aria-label="استجابة خدمة الحفظ" defaultValue={resultDemo.getMode()} onChange={event => resultDemo.setMode(event.target.value as "normal" | "offline" | "lost-response" | "rejected")}><option value="normal">طبيعي</option><option value="offline">تعذّر الاتصال</option><option value="lost-response">حفظ النتيجة وفقد الرد</option><option value="rejected">رفض النتيجة</option></select></label><Button disabled={state !== "ready"} onClick={() => setFinished(true)}>إنهاء تجريبي بنتيجة 80</Button></details></section>}<footer className="game-mode-footer"><span role="status">{state === "ready" ? (asset?.readiness === "load" ? "تم تحميل صفحة اللعبة" : "الحاوية جاهزة") : state === "error" ? "بانتظار استعادة التحميل" : "جارٍ التحميل"}</span><span>{asset?.readiness === "load" ? (isMock ? `${asset?.game === "wassel-tareeqak" ? "وصّل طريقك · اللوحة الداخلية محلية للجلسة" : asset?.game === "dev-run" ? "Dev Run" : asset?.game === "spot-the-ai" ? "Spot The AI" : "ESCAPE.EXE"} · نتائج محفوظة في Mock فقط` : `${asset?.game === "wassel-tareeqak" ? "وصّل طريقك · اللوحة الداخلية محلية للجلسة" : asset?.game === "dev-run" ? "Dev Run" : asset?.game === "spot-the-ai" ? "Spot The AI" : "ESCAPE.EXE"} · حفظ النتيجة عبر الخدمة`) : "صفحة اختبار للحاوية فقط · لا توجد نقاط أو نتائج محفوظة"}</span></footer>
   </main>;
 }

@@ -59,9 +59,9 @@ const send=(frame:Frame,data:unknown)=>frame.evaluate(data=>parent.postMessage(d
 const warns=(page:Page)=>page.evaluate(()=>!window.dispatchEvent(new Event("beforeunload",{cancelable:true})));
 test.describe.configure({timeout:60000});
 
-test("Live 2 starts once with real Dev Run; games 4–5 stay blocked and no identity enters iframe",async({page})=>{
+test("Live 2 starts once with real Dev Run; game 4 stays blocked and no identity enters iframe",async({page})=>{
   const api=await backend(page);await identify(page);
-  for(const id of ["4","5"]) {
+  for(const id of ["4"]) {
     await page.locator(`input[name="eligible-game"][value="${id}"]`).check();await page.getByRole("button",{name:"تأكيد اختيار اللعبة"}).click();
     await expect(page.getByRole("button",{name:"ابدأ اللعب",exact:true})).toBeDisabled();await page.getByRole("button",{name:"تغيير الاختيار",exact:true}).click();
   }

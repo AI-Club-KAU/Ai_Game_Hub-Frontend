@@ -28,8 +28,9 @@ test("asset registry separates approved Live ESCAPE from the unchanged Mock cata
   expect(getGameAsset("2", false)?.game).toBe("dev-run");
   for (const id of ["mock", "4", "5"]) {
     expect(canLaunchGame(id, true)).toBe(true);
-    expect(canLaunchGame(id, false)).toBe(false);
-    expect(getGameAsset(id, false)).toBeNull();
+    expect(canLaunchGame(id, false)).toBe(id === "5");
+    if (id === "5") expect(getGameAsset(id, false)?.game).toBe("spot-the-ai");
+    else expect(getGameAsset(id, false)).toBeNull();
   }
   expect(getGameAsset("unknown", true)).toBeNull();
   expect(getGameAsset("1", true)).toBeNull();

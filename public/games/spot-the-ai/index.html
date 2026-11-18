@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>هل تقدر تكتشف أي صورة سواها AI؟ | AIClub</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <img src="assets/icons/aiclub-logo.png" alt="AIClub" class="logo">
+  <div class="hud" id="hud" hidden>
+    <span>الجولة <b id="roundNo">1</b>/<b id="roundTotal">8</b></span>
+    <span>النقاط <b id="score">0</b></span>
+    <span id="streakBox" hidden>🔥 <b id="streak">0</b></span>
+  </div>
+  <button class="mute" id="muteBtn" aria-label="كتم الصوت">🔊</button>
+</header>
+
+<main>
+  <section id="start" class="screen active">
+    <h1>هــل تقدر تكتشــف أي صــورة سواهــا <span class="ai">Ai</span> ؟</h1>
+    <p>في كل جولة صورتان: واحدة صممها إنسان وواحدة ولّدها الذكاء الاصطناعي. اختر الـ AI قبل ما ينتهي الوقت.</p>
+    <button class="btn" id="startBtn">ابدأ اللعب</button>
+  </section>
+
+  <section id="game" class="screen">
+    <div class="timer"><div id="timerBar"></div></div>
+    <h2 class="q">أي صورة سواها Ai ؟</h2>
+    <div class="pair">
+      <button class="card" id="cardA"><img alt="الصورة الأولى"><span class="badge"></span></button>
+      <button class="card" id="cardB"><img alt="الصورة الثانية"><span class="badge"></span></button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+    <button class="btn" id="nextBtn" hidden>الجولة التالية</button>
+  </section>
+
+  <section id="end" class="screen">
+    <h2>انتهت اللعبة</h2>
+    <div class="final"><b id="finalScore">0</b><small>من 100</small></div>
+    <p id="finalMsg"></p>
+    <p class="sub">إجابات صحيحة: <b id="finalCorrect">0</b> من <b id="finalTotal">8</b></p>
+    <button class="btn" id="againBtn">العب مرة ثانية</button>
+  </section>
+</main>
+<script src="script.js"></script>
+</body>
+</html>

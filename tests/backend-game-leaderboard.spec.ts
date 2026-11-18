@@ -79,7 +79,7 @@ test("Live tabs stay unavailable without calling the future endpoint; Overall st
   await page.getByRole("button", { name: "الدخول إلى البوث" }).click();await page.getByRole("button", { name: "تجهيز البوث", exact: true }).click();
   await page.getByRole("button", { name: "لوحة المتصدرين", exact: true }).click();
   await expect(page.locator(".leaderboard-points strong")).toHaveText("500");
-  for (const name of ["ESCAPE.EXE", "Dev Run", "وصّل طريقك", "Game 4", "Game 5"]) {
+  for (const name of ["ESCAPE.EXE", "Dev Run", "وصّل طريقك", "Game 4", "Spot The AI"]) {
     await page.getByRole("tab", { name, exact: true }).click();
     await expect(page.getByRole("heading", { name: "ترتيب اللعبة غير متاح بعد" })).toBeVisible();
     await expect(page.locator(".leaderboard-row")).toHaveCount(0);

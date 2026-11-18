@@ -3,10 +3,10 @@ import { getGameAsset } from "../src/features/games/game-assets";
 import { wasselTareeqakScore } from "../src/features/games/wassel-tareeqak-result";
 import { embedWassel, watchWasselNetwork } from "./wassel-tareeqak-test-helpers";
 
-test("Live 3 is Wassel, Mock 3 stays QA and Live 4–5 remain blocked",()=>{
+test("Live 3 is Wassel, Mock 3 stays QA and Live 4 remains blocked",()=>{
   expect(getGameAsset("3",false)?.game).toBe("wassel-tareeqak");
   expect(getGameAsset("3",true)?.game).toBe("qa");
-  for(const id of ["4","5","mock","03","3.0","unknown"])expect(getGameAsset(id,false)).toBeNull();
+  for(const id of ["4","mock","03","3.0","unknown"])expect(getGameAsset(id,false)).toBeNull();
 });
 test("opaque iframe loads original board, local fonts, demo, sounds and 120-second timer without a name",async({page})=>{
   const {frame}=await embedWassel(page);

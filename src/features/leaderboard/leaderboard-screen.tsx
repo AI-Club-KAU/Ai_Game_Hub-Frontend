@@ -10,7 +10,7 @@ import { MockHistoryConflict, MOCK_GAME_CATALOG, MOCK_MAX_POINTS } from "@/servi
 
 const tabs = [
   { id: "overall", label: "Overall" }, { id: "1", label: "ESCAPE.EXE" }, { id: "2", label: "Dev Run" },
-  { id: "3", label: "وصّل طريقك" }, { id: "4", label: "Game 4" }, { id: "5", label: "Game 5" },
+  { id: "3", label: "وصّل طريقك" }, { id: "4", label: "Game 4" }, { id: "5", label: "Spot The AI" },
 ] as const;
 type Tab = "overall" | LeaderboardGameId;
 type Snapshot = { tab: "overall"; value: LeaderboardSnapshot } | { tab: LeaderboardGameId; value: GameLeaderboardSnapshot };
